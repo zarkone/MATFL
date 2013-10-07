@@ -2,7 +2,7 @@
 #define DEFS 1
 
 
-#define MAXLEX 1000
+#define MAXLEX 100
 #define TEnd 0x200
 #define TError 0x100
 
@@ -33,5 +33,16 @@
 #define TLess 0x4C
 #define TNot 0x4D
 #define TAssign 0x4E
+
+#define TComma 0x50
+#define TSem 0x51
+
+#define TVoid 0x60
+#define TInt 0x61
+#define TInt64 0x62
+#define TMain 0x63
+#define TFor 0x64
+
+#define TMaxLenOverflow 0x300
 
 #endif

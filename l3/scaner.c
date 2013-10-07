@@ -24,26 +24,46 @@ Skip:
 /* TId: */
 	if(t[uk] >= 'a' && t[uk] <= 'z' || t[uk] >= 'A' && t[uk] <= 'Z'){
 		
-		while( t[uk] >= 'a' && t[uk] <= 'z' || t[uk] >= 'A' && t[uk] <= 'Z' || t[uk] >= '0' && t[uk] <= '9'  )
-		{
+		while(t[uk] >= 'a' && t[uk] <= 'z' || t[uk] >= 'A' && t[uk] <= 'Z' || t[uk] >= '0' && t[uk] <= '9'  ){
+
+            if(i >= MAXLEX) { uk++; continue; };
+
 			lex[i++] = t[uk++];
-		}	
-		
+        }
+        
+        if(i >= MAXLEX) printf ("Warn: Too long ID (%d)\n", uk);
+
 		lex[i] = '\0';
+
+        if(!strcmp(lex, "void")) { return TVoid; }
+        if(!strcmp(lex, "int")) { return TInt; }
+        if(!strcmp(lex, "__int64")) { return TInt64; }
+        if(!strcmp(lex, "main")) { return TMain; }
+        if(!strcmp(lex, "for")) { return TFor; }
+        
 		return Tid;
 	}
 
 
 /* TConstHex: */
-	if(t[uk] == '0' && t[uk+1] == 'x'){
+	if(t[uk] == '0' && (t[uk+1] == 'x' || t[uk+1] == 'X')){
 		uk+=2;
-		while( t[uk] >= '0' && t[uk] <= '9' ||  t[uk] >= 'a' && t[uk] <= 'f' || t[uk] >= 'A' && t[uk] <= 'F'  )
+		while( t[uk] >= '0' && t[uk] <= '9' ||  t[uk] >= 'a' && t[uk] <= 'f' || t[uk] >= 'A' && t[uk] <= 'F'  ){
+
+            if(i >= MAXLEX) { uk++; continue; };
+
 			lex[i++] = t[uk++];
-		
-		if(i == 2) {
+        }
+
+        if(i >= MAXLEX) printf ("Warn: Too long const (%d)\n", uk);
+
+		if(i == 0) {
+
+            printf ("Empty 0x const\n");
 			lex[0] = '\0';
 			return TError;
 		}
+
 		lex[i] = '\0';
 		return TConstHex;
 	}
@@ -65,12 +85,15 @@ Skip:
 	if(t[uk] == ')') { lex[i++] = t[uk++]; lex[i] = '\0';return TCrBrackClose; }
 	if(t[uk] == '{') { lex[i++] = t[uk++]; lex[i] = '\0';return TEgBrackOpen; }
 	if(t[uk] == '}') { lex[i++] = t[uk++]; lex[i] = '\0';return TEgBrackClose; }
-// 
+ 
 	if(t[uk] == '+') { lex[i++] = t[uk++]; lex[i] = '\0';return TPlus; }
 	if(t[uk] == '-') { lex[i++] = t[uk++]; lex[i] = '\0';return TMinus; }
 	if(t[uk] == '/') { lex[i++] = t[uk++]; lex[i] = '\0';return TDiv; }
 	if(t[uk] == '*') { lex[i++] = t[uk++]; lex[i] = '\0';return TMul; }
 	if(t[uk] == '%') { lex[i++] = t[uk++]; lex[i] = '\0';return TRest; }
+
+	if(t[uk] == ',') { lex[i++] = t[uk++]; lex[i] = '\0';return TSem; }
+    if(t[uk] == ';') { lex[i++] = t[uk++]; lex[i] = '\0';return TComma; }
 
 	if(t[uk] == '>') { 
 		lex[i++] = t[uk++];  
@@ -87,9 +110,17 @@ Skip:
 		if(t[uk] == '=') { lex[i++] = t[uk]; lex[i] = '\0'; return TNotEq; }
 		else {  lex[i] = '\0'; return TNot;}
 	}
+	if(t[uk] == '=') { 
+		lex[i++] = t[uk++];  
+		if(t[uk] == '=') { lex[i++] = t[uk]; lex[i] = '\0'; return TEq; }
+		else {  lex[i] = '\0'; return TAssign;}
+	}
 
+    lex[i++] = t[uk];
+    lex[i] = '\0';
 	uk++;
-	return -1;
+
+	return TError;
 
 }
 
@@ -123,19 +154,19 @@ int main(int argc, char** argv){
 		t = strcat(t, line);
 	}
 	t[fileLen] = '\0';
-	
+ 
 	char *lex=(char *)calloc(MAXLEX,sizeof(char));
 	int type = 0;
-
+ 
 	while((type = scan(lex)) != TEnd){
 		
 		// TODO: remove when all table will be translated
-		if(type == -1) continue;
+		// if(type == -1) continue;
 		
-		printf("%x: %s (%d)\n", type, lex, uk);
+		printf("%x: \t %s \n", type, lex);
 		lex[0] = '\0';
 
 	}
-
+	
     exit(EXIT_SUCCESS);
 }
