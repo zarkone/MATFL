@@ -140,20 +140,17 @@ int main(int argc, char** argv){
 		printf("Cannot open file: %s\n", argv[1]);
 		exit(EXIT_FAILURE);
 	}
-	
-	char *line = NULL;
-	int fileLen = 0;
 
-	t = calloc(1,sizeof(char));
-	
-	while ((read = getline(&line, &len, fp)) != -1) {
+    fseek(fp, 0, SEEK_END);
+    long fsize = ftell(fp);
+    fseek(fp, 0, SEEK_SET);
 
-		t = (char *)realloc(t, (fileLen + len + 1) * sizeof(char));
-		fileLen += len;
+    t = malloc(fsize + 1);
+    fread(t, fsize, 1, fp);
+    fclose(fp);
 
-		t = strcat(t, line);
-	}
-	t[fileLen] = '\0';
+    t[fsize] = 0;
+
  
 	char *lex=(char *)calloc(MAXLEX,sizeof(char));
 	int type = 0;
