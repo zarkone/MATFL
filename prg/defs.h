@@ -1,7 +1,6 @@
 #ifndef DEFS
 #define DEFS 1
 
-
 #define MAXLEX 100
 #define TEnd 0x200
 #define TError 0x100
