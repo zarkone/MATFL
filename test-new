@@ -1,0 +1,69 @@
+cc  -I./ -g -c scaner.c && ar cr scaner.a scaner.o
+cc -I./ -g main.c scaner.o -o main && ./main test.cpp
+60: 	 void 
+Warn: Too long ID (284)
+1: 	 swaPasdsasw56565656aPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsasw 
+32: 	 ( 
+33: 	 ) 
+34: 	 { 
+35: 	 } 
+100: 	 Ñ 
+100: 	 ‹ 
+21: 	 345677654DDDDDDDFDFDFDFDFDfdfdfdfDfdfd 
+21: 	 5 
+Empty 0x const
+100: 	  
+1: 	 X0 
+Empty 0x const
+100: 	  
+1: 	 sasasa56 
+61: 	 int 
+63: 	 main 
+32: 	 ( 
+33: 	 ) 
+34: 	 { 
+61: 	 int 
+1: 	 a 
+4e: 	 = 
+20: 	 35 
+51: 	 , 
+1: 	 bg3 
+4e: 	 = 
+21: 	 ffba00 
+51: 	 , 
+1: 	 m 
+30: 	 [ 
+20: 	 25 
+31: 	 ] 
+51: 	 , 
+1: 	 ddt3 
+50: 	 ; 
+1: 	 a 
+100: 	 ^ 
+20: 	 5 
+50: 	 ; 
+1: 	 b 
+100: 	 : 
+20: 	 55 
+50: 	 ; 
+35: 	 } 
+42: 	 / 
+43: 	 * 
+100: 	 & 
+100: 	 ^ 
+44: 	 % 
+100: 	 $ 
+44: 	 % 
+100: 	 ^ 
+100: 	 & 
+43: 	 * 
+32: 	 ( 
+30: 	 [ 
+31: 	 ] 
+33: 	 ) 
+60: 	 void 
+1: 	 swap335f 
+32: 	 ( 
+33: 	 ) 
+34: 	 { 
+35: 	 } 
