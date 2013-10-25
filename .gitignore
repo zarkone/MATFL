@@ -1,0 +1,5 @@
+/prg/compile
+/prg/*.a
+/prg/*.o
+/prg/.#*
+/prg/#*#
