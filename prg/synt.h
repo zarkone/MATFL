@@ -5,6 +5,8 @@ void Prg(char *t, int *uk);
 void FuncDescr(char *t, int *uk);
 void VarDescr(char *t, int *uk);
 void Block(char *t, int *uk);
+void Operator(char *t, int *uk);
 void PossibleArrInit(char *t,int *uk);
+void Expression(char *t,int *uk);
 
 #endif
