@@ -21,9 +21,10 @@ Skip:
 	}
 
 /* TId: */
-	if(t[*uk] >= 'a' && t[*uk] <= 'z' || t[*uk] >= 'A' && t[*uk] <= 'Z'){
-		
-		while(t[*uk] >= 'a' && t[*uk] <= 'z' || t[*uk] >= 'A' && t[*uk] <= 'Z' || t[*uk] >= '0' && t[*uk] <= '9'  ){
+	if(t[*uk] == '_' || t[*uk] >= 'a' && t[*uk] <= 'z' || t[*uk] >= 'A' && t[*uk] <= 'Z'){
+
+
+		while(t[*uk] == '_' || t[*uk] >= 'a' && t[*uk] <= 'z' || t[*uk] >= 'A' && t[*uk] <= 'Z' || t[*uk] >= '0' && t[*uk] <= '9'  ){
 
 			if(i >= MAXLEX) { (*uk)++; continue; };
 
