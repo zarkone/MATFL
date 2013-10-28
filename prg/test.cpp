@@ -1,6 +1,8 @@
 int a,b,c;
 void swaPasdsasw56565656aPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasds1111111111a(){
-    __int64 a,b;
+    __int64 a,b[9] = {1,2,3};
+
+    
 }
 ы    0x345677654DDDDDDDFDFDFDFDFDfdfdfdfDfdfd 0x5 0XX0 0xsasasa56
 

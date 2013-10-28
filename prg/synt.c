@@ -115,12 +115,13 @@ printf ("%s\n",lex);
             }
 
             PossibleArrInit(t,uk);
-        
+            T = scan(lex, t, uk);
+            
         } else if (T == TAssign) {
 
             Expression(t,uk);
-        
-        }  /*  ; , */
+            T = scan(lex, t, uk);
+        }  
         
     } while(T == TSem);
 
@@ -141,14 +142,12 @@ void Block(char *t, int *uk){
         exit(EXIT_FAILURE);
     }
 
-    while(1) {
+    while(T != TEgBrackClose) {
 
         oldUk = *uk;
         T = scan(lex,t,uk);
 
-        if (T == TEgBrackClose) { break; }
-
-        else if (T == TInt || T == TInt64) {
+        if (T == TInt || T == TInt64) {
 
             *uk = oldUk;
             VarDescr(t,uk);
@@ -171,27 +170,133 @@ void Operator(char *t,int *uk){
     printf ("Operator. \n");
 
     int oldUk = *uk, T = scan(lex,t,uk);
-    printf ("%s, %x\n",lex, T);
+    
+    if (T == TFor) {
 
-    // if (T == TCrBrackOpen || T == TConstDec || T == TConstHex) {
+        *uk = oldUk;
+        For(t,uk);
+        return;
+        
+    } else if (T == TEgBrackOpen) {
 
-    //     Expression(t,uk);
-    //     T = scan(lex, t, uk);
-    // }
-        /*
-                   T == Tid ||
-                   T == TConstDec ||
-                   T == TConstHex ||
-                   T = TFor ||
-                   T == TEgBrackOpen) {
-        */  
+        *uk = oldUk;
+        Block(t,uk);
+        return;
+        
+    }
+    
+    int T1 =  scan(lex,t,uk);
+    
+    if (T == TCrBrackOpen ||
+        T == TConstDec ||
+        T == TConstHex ||
+        (T == Tid && T1 == TSqBrackOpen)) {
+
+        *uk = oldUk;
+        Expression(t,uk);
+        T = scan(lex, t, uk);
+        
+    } else if (T == Tid && T1 == TCrBrackOpen) {
+        
+        T1 = scan(lex,t,uk);
+        
+        if (T1 != TCrBrackClose) {
+             
+            printf ("Expected `<id>()`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+            exit(EXIT_FAILURE);
+             
+        } else printf ("Function call.\n");
+
+        T = scan(lex, t, uk);
+    }
+
+    if (T != TComma) {
+        printf ("Expected at least `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+    }
+        
 
     
 }
 
 void PossibleArrInit(char *t,int *uk){
+    
 	printf ("PossibleArrayInit. \n");
+    int oldUk = *uk, T = scan(lex,t,uk);
+
+    if (T != TAssign) { *uk = oldUk; return; }
+
+    T = scan(lex,t,uk);
+    if (T != TEgBrackOpen) {
+        printf ("Expected  `{`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+    }
+
+    do {
+        
+        T = scan(lex,t,uk);
+
+        if (T != TConstDec && T != TConstHex) {
+            printf ("Expected  `ConstDec` or `ConstHex`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+            exit(EXIT_FAILURE);
+        }
+        
+        T = scan(lex,t,uk);
+        if (T == TEgBrackClose) { break; }
+
+    } while(T == TSem);
+
+    if (T != TEgBrackClose) {
+        printf ("Expected  `}`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+
+    }
 }
 void Expression(char *t,int *uk){
 	printf ("Expression. \n");
+
+    
+}
+void For(char *t,int *uk){
+	printf ("Expression. \n");
+
+    int oldUk = *uk, T = scan(lex,t,uk);
+
+    if (T != TFor) {
+        printf ("Expected  `<for>`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+    }
+
+    T = scan(lex,t,uk);
+    if (T != TCrBrackOpen) {
+        printf ("Expected  `(`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+    }
+
+    Expression(t,uk);
+
+    T = scan(lex,t,uk);
+    if (T != TComma) {
+        printf ("Expected  `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+    }
+
+    Expression(t,uk);
+
+    T = scan(lex,t,uk);
+    if (T != TComma) {
+        printf ("Expected  `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+    }
+    
+    Expression(t,uk);
+
+    T = scan(lex,t,uk);
+    if (T != TCrBrackClose) {
+        printf ("Expected  `)`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+    }
+
+    Operator(t,uk);
+
 }
