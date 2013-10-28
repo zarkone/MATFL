@@ -10,9 +10,13 @@ void Prg(char *t, int *uk){
     lex=(char *)calloc(MAXLEX,sizeof(char));	
     int oldUk = *uk, T = scan(lex, t, uk);
 
+	while(T == TInt || T == TInt64 || T == TVoid || T == TEnd) {
 
-	while(T == TInt || T == TInt64 || T == TVoid) {
-
+        if (T == TEnd) {
+            printf ("Exit Success.\n, uk: %d, lex: %s, T: %x", uk, lex, T);
+            exit(EXIT_SUCCESS);
+        }
+        
 		if (T == TVoid) { *uk = oldUk; FuncDescr(t, uk); }
 		else if (T == TInt64) { *uk = oldUk; VarDescr(t, uk); }
 		else if (T == TInt) {
@@ -34,7 +38,9 @@ void Prg(char *t, int *uk){
         T = scan(lex,t,uk);
 	}
 
-    printf ("Exit Success\n, uk: %d, lex: %s", *uk, lex);
+    printf ("Expected EOF, <void> or <int >, got: uk: %d, lex: %s, T: %x", *uk, lex, T);
+    exit(EXIT_FAILURE);
+
 }
 
 void FuncDescr(char *t, int *uk){
