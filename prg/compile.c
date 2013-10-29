@@ -38,7 +38,7 @@ int main(int argc, char** argv) {
 	lex=(char *)calloc(MAXLEX,sizeof(char));
 	int type = 0;
 	Prg(t, &uk);
-
+    
 	// while((type = scan(lex, t, &uk)) != TEnd){
 
 	// 	// TODO: remove when all table will be translated

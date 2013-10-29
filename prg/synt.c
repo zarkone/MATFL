@@ -13,7 +13,7 @@ void Prg(char *t, int *uk){
 	while(T == TInt || T == TInt64 || T == TVoid || T == TEnd) {
 
         if (T == TEnd) {
-            printf ("Exit Success.\n, uk: %d, lex: %s, T: %x", uk, lex, T);
+            printf ("\n -*- Exit Success -*-\n uk: %d, lex: %s, T: %x \n", *uk, lex, T);
             exit(EXIT_SUCCESS);
         }
         
@@ -71,7 +71,8 @@ void FuncDescr(char *t, int *uk){
         printf ("Expected `{ `, got: %x (uk: %d, lex: %s)", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
-
+    
+    
     Block(t, uk); 
 
 
@@ -84,7 +85,7 @@ void VarDescr(char *t, int *uk){
 	printf ("VarDescr. \n");
 	int	oldUk,
 		T = scan(lex, t, uk);
-printf ("%s\n",lex);    
+
     if (!(T == TInt || T == TInt64)) {
         printf ("Expected `int` or `__int64` , got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
@@ -135,7 +136,7 @@ printf ("%s\n",lex);
 void Block(char *t, int *uk){
 
 	printf ("Block. \n");
-    int oldUk, T = scan(lex,t,uk);
+    int oldUk = *uk, T = scan(lex,t,uk);
     
     if (!(T == TEgBrackOpen)) {
         printf ("Expected `{ `, got: %x (uk: %d, lex: %s)", T, *uk, lex);
@@ -144,9 +145,10 @@ void Block(char *t, int *uk){
 
     while(T != TEgBrackClose) {
 
+        printf (" bb %s, %d\n",lex, *uk);
         oldUk = *uk;
         T = scan(lex,t,uk);
-
+        
         if (T == TInt || T == TInt64) {
 
             *uk = oldUk;
@@ -154,13 +156,21 @@ void Block(char *t, int *uk){
             
         } else if (T == TCrBrackOpen ||
                    T == Tid ||
+                   T == TComma ||
                    T == TConstDec ||
                    T == TConstHex ||
                    T == TFor ||
                    T == TEgBrackOpen) {
             
+
             *uk = oldUk;
+            printf ("%s, %x, %d\n",lex, T,*uk);
             Operator(t,uk);
+
+        } else if (T != TEgBrackClose) {
+            printf ("Expected `<var descr>` or `<operator>`, got: %x (uk: %d, lex: %s)", T, *uk, lex);
+            exit(EXIT_FAILURE);
+
         }
     }
 
@@ -170,7 +180,7 @@ void Operator(char *t,int *uk){
     printf ("Operator. \n");
 
     int oldUk = *uk, T = scan(lex,t,uk);
-    
+    printf ("%s\n",lex);
     if (T == TFor) {
 
         *uk = oldUk;
@@ -180,38 +190,45 @@ void Operator(char *t,int *uk){
     } else if (T == TEgBrackOpen) {
 
         *uk = oldUk;
+
         Block(t,uk);
         return;
         
     }
     
-    int T1 =  scan(lex,t,uk);
-    
-    if (T == TCrBrackOpen ||
-        T == TConstDec ||
-        T == TConstHex ||
-        (T == Tid && T1 == TSqBrackOpen)) {
+    if (T == Tid) {
+        T = scan(lex,t,uk);
+
+        if (T == TCrBrackOpen) {
+
+            T = scan(lex,t,uk);
+
+            if (T != TCrBrackClose) {
+                printf ("Expected `<id>()`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+                exit(EXIT_FAILURE);
+            } else {
+
+                T = scan(lex,t,uk);
+            }
+        } else {
+            
+            *uk = oldUk;
+            Expression(t,uk);
+            T = scan(lex,t,uk);
+        }
+        
+    } else if (T == TCrBrackOpen ||
+               T == TConstDec ||
+               T == TConstHex ) {
 
         *uk = oldUk;
         Expression(t,uk);
-        T = scan(lex, t, uk);
-        
-    } else if (T == Tid && T1 == TCrBrackOpen) {
-        
-        T1 = scan(lex,t,uk);
-        
-        if (T1 != TCrBrackClose) {
-             
-            printf ("Expected `<id>()`, got: %x, uk: %d, lex: %s", T, *uk, lex);
-            exit(EXIT_FAILURE);
-             
-        } else printf ("Function call.\n");
-
-        T = scan(lex, t, uk);
+        T = scan(lex,t,uk);
+     
     }
-
+    
     if (T != TComma) {
-        printf ("Expected at least `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        printf ("Expected  `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
         
@@ -252,11 +269,153 @@ void PossibleArrInit(char *t,int *uk){
 
     }
 }
-void Expression(char *t,int *uk){
-	printf ("Expression. \n");
 
+void Expression(char *t,int *uk){
+
+    printf ("Expression. %s \n", lex);
+    int oldUk = *uk, T;
+
+    do {
+        
+        A2(t,uk);
+        oldUk = *uk;
+        T = scan(lex,t,uk);
+        printf ("Try Assign, T: %x, lex: %s\n", T, lex);
+
+    } while(T == TAssign);
+
+    *uk = oldUk;
     
 }
+
+void A2(char *t,int *uk){
+
+    printf ("A2. \n");
+    int oldUk = *uk;
+
+    A3(t,uk);
+    oldUk = *uk;
+    int T = scan(lex,t,uk);
+    
+    while (T == TAnd || T == TOr) {
+        A3(t,uk);
+        oldUk = *uk;
+        T = scan(lex,t,uk);
+    }
+    *uk = oldUk;
+    
+}
+void A3(char *t,int *uk){
+
+    printf ("A3. \n");
+    int oldUk = *uk;
+
+    int    T = scan(lex,t,uk);
+    if (T != TNot) { *uk = oldUk; }
+    
+    A4(t,uk);
+    oldUk = *uk;
+    T = scan(lex,t,uk);
+    
+    while (T == TGrEq || T == TGr || T == TLess || T == TLess || T == TEq || T == TNotEq) {
+        A4(t,uk);
+        oldUk = *uk;
+        T = scan(lex,t,uk);
+
+    }
+    
+    *uk = oldUk;
+}
+
+void A4(char *t,int *uk){
+
+    printf ("A4. \n");
+    int oldUk = *uk;
+
+    int T = scan(lex,t,uk);
+    if (T != TPlus && T != TMinus) { *uk = oldUk; }
+    
+    A5(t,uk);
+    oldUk = *uk;
+    T = scan(lex,t,uk);
+    
+    while (T == TPlus || T == TMinus ) {
+        A5(t,uk);
+        oldUk = *uk;
+        T = scan(lex,t,uk);
+
+    }
+    
+    *uk = oldUk;
+}
+
+void A5(char *t,int *uk){
+
+    printf ("A5. \n");
+    int oldUk = *uk;
+
+    A6(t,uk);
+    oldUk = *uk;
+    int T = scan(lex,t,uk);
+    
+    while (T == TMul || T == TDiv || T == TRest ) {
+        A6(t,uk);
+        oldUk = *uk;
+        T = scan(lex,t,uk);
+
+    }
+    
+    *uk = oldUk;
+}
+void A6(char *t,int *uk){
+
+
+    int oldUk = *uk, T = scan(lex,t,uk);
+    printf ("A6. %s \n", lex);
+
+    if (T == TCrBrackOpen){
+
+        printf ("Tbro\n");
+
+        Expression(t,uk);
+
+        oldUk = *uk;
+        T = scan(lex,t,uk);
+        
+        if (T != TCrBrackClose){
+
+            printf ("Expected  `)`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+            exit(EXIT_FAILURE);
+            
+        } else { }
+        
+        
+    } else if (T == Tid) {
+
+        printf ("tid..\n");
+        oldUk = *uk;
+        T = scan(lex,t,uk);
+        
+        if (T == TSqBrackOpen){
+
+            Expression(t,uk);
+            
+            T = scan(lex,t,uk);
+            if (T != TSqBrackClose){
+                printf ("Expected  `]`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+                exit(EXIT_FAILURE);
+            } else { printf ("Var with index. \n"); }
+        } else { *uk = oldUk; }
+    } else if ( T != TConstDec && T != TConstHex) {
+        printf ("Expected  `(Expr)` or `id` or `id[expr]` or `const`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+        exit(EXIT_FAILURE);
+
+    } else printf ("const: %s\n", lex);
+    
+
+
+}
+
 void For(char *t,int *uk){
 	printf ("Expression. \n");
 
