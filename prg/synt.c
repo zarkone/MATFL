@@ -45,7 +45,6 @@ void Prg(char *t, int *uk){
 
 void FuncDescr(char *t, int *uk){
 
-	printf ("FunDescr. \n");
 	int	oldUk,
 		T = scan(lex, t, uk),
 		T1 = scan(lex, t, uk);
@@ -72,17 +71,12 @@ void FuncDescr(char *t, int *uk){
         exit(EXIT_FAILURE);
     }
     
-    
     Block(t, uk); 
 
-
-    
-	
 }
 
 void VarDescr(char *t, int *uk){
 
-	printf ("VarDescr. \n");
 	int	oldUk,
 		T = scan(lex, t, uk);
 
@@ -135,7 +129,6 @@ void VarDescr(char *t, int *uk){
 
 void Block(char *t, int *uk){
 
-	printf ("Block. \n");
     int oldUk = *uk, T = scan(lex,t,uk);
     
     if (!(T == TEgBrackOpen)) {
@@ -145,7 +138,6 @@ void Block(char *t, int *uk){
 
     while(T != TEgBrackClose) {
 
-        printf (" bb %s, %d\n",lex, *uk);
         oldUk = *uk;
         T = scan(lex,t,uk);
         
@@ -164,7 +156,7 @@ void Block(char *t, int *uk){
             
 
             *uk = oldUk;
-            printf ("%s, %x, %d\n",lex, T,*uk);
+
             Operator(t,uk);
 
         } else if (T != TEgBrackClose) {
@@ -177,10 +169,8 @@ void Block(char *t, int *uk){
 }
 void Operator(char *t,int *uk){
 
-    printf ("Operator. \n");
-
     int oldUk = *uk, T = scan(lex,t,uk);
-    printf ("%s\n",lex);
+
     if (T == TFor) {
 
         *uk = oldUk;
@@ -238,7 +228,6 @@ void Operator(char *t,int *uk){
 
 void PossibleArrInit(char *t,int *uk){
     
-	printf ("PossibleArrayInit. \n");
     int oldUk = *uk, T = scan(lex,t,uk);
 
     if (T != TAssign) { *uk = oldUk; return; }
@@ -272,7 +261,6 @@ void PossibleArrInit(char *t,int *uk){
 
 void Expression(char *t,int *uk){
 
-    printf ("Expression. %s \n", lex);
     int oldUk = *uk, T;
 
     do {
@@ -280,7 +268,6 @@ void Expression(char *t,int *uk){
         A2(t,uk);
         oldUk = *uk;
         T = scan(lex,t,uk);
-        printf ("Try Assign, T: %x, lex: %s\n", T, lex);
 
     } while(T == TAssign);
 
@@ -290,7 +277,6 @@ void Expression(char *t,int *uk){
 
 void A2(char *t,int *uk){
 
-    printf ("A2. \n");
     int oldUk = *uk;
 
     A3(t,uk);
@@ -307,7 +293,6 @@ void A2(char *t,int *uk){
 }
 void A3(char *t,int *uk){
 
-    printf ("A3. \n");
     int oldUk = *uk;
 
     int    T = scan(lex,t,uk);
@@ -329,7 +314,6 @@ void A3(char *t,int *uk){
 
 void A4(char *t,int *uk){
 
-    printf ("A4. \n");
     int oldUk = *uk;
 
     int T = scan(lex,t,uk);
@@ -351,7 +335,6 @@ void A4(char *t,int *uk){
 
 void A5(char *t,int *uk){
 
-    printf ("A5. \n");
     int oldUk = *uk;
 
     A6(t,uk);
@@ -371,11 +354,8 @@ void A6(char *t,int *uk){
 
 
     int oldUk = *uk, T = scan(lex,t,uk);
-    printf ("A6. %s \n", lex);
 
     if (T == TCrBrackOpen){
-
-        printf ("Tbro\n");
 
         Expression(t,uk);
 
@@ -392,7 +372,6 @@ void A6(char *t,int *uk){
         
     } else if (T == Tid) {
 
-        printf ("tid..\n");
         oldUk = *uk;
         T = scan(lex,t,uk);
         
@@ -404,20 +383,20 @@ void A6(char *t,int *uk){
             if (T != TSqBrackClose){
                 printf ("Expected  `]`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
-            } else { printf ("Var with index. \n"); }
+            }
+            
         } else { *uk = oldUk; }
     } else if ( T != TConstDec && T != TConstHex) {
         printf ("Expected  `(Expr)` or `id` or `id[expr]` or `const`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
 
-    } else printf ("const: %s\n", lex);
+    } 
     
 
 
 }
 
 void For(char *t,int *uk){
-	printf ("Expression. \n");
 
     int oldUk = *uk, T = scan(lex,t,uk);
 
