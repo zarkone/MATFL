@@ -117,10 +117,13 @@ Skip:
 	}
 
     lex[i++] = t[*uk];
+
+    printf ("Unknown lex (uk: %d, lex: %s)\n",*uk,lex);
+    exit(EXIT_FAILURE);
+
     lex[i] = '\0';
 	(*uk)++;
 
-	return TError;
 
 }
 
