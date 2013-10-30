@@ -27,8 +27,8 @@ int main(){
     for(i =234 +(5) + wer; i - 5 +2; j = i + i+1) a + ret[334 +gh];
     int a,g;
 
-// !!!
     adsad();
+// !!!
     void asd(){}
     
 }                  
