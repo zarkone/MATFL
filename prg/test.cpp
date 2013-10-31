@@ -28,6 +28,7 @@ int main(){
     int a,g;
 
     adsad();
+
 // !!!
     void asd(){}
     

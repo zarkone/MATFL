@@ -200,6 +200,7 @@ void Operator(char *t,int *uk){
 
                 T = scan(lex,t,uk);
             }
+
         } else {
             
             *uk = oldUk;
