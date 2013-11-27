@@ -1,3 +1,5 @@
+// TODO: remove memory leaks >..<
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,8 +17,8 @@ int main(int argc, char** argv) {
 	int uk = 0;
 	
 	FILE *fp = fopen (argv[1],"r");;
-	size_t len = 0;
-	ssize_t read;
+
+
 
 	
 	if (fp == NULL){
@@ -36,8 +38,11 @@ int main(int argc, char** argv) {
 
  
 	lex=(char *)calloc(MAXLEX,sizeof(char));
-	int type = 0;
+
 	Prg(t, &uk);
+    
+    free(lex);
+    free(t);
     
 	// while((type = scan(lex, t, &uk)) != TEnd){
 
@@ -49,6 +54,7 @@ int main(int argc, char** argv) {
 
 	// }
 
-
+    exit(EXIT_SUCCESS);
+    
 
 }
