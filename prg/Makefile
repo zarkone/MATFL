@@ -1,8 +1,15 @@
-main: scaner synt
-	cc -I./ -g compile.c scaner.o synt.o -o compile && ./compile test.cpp
+run: main
+	./compile test.cpp
+main: buildlib
+	cc -I./ -g -Wall compile.c -L./ -lcompile -o compile
+
+buildlib: scaner synt
+	ar ruv libcompile.a scaner.o synt.o
+	ranlib libcompile.a
+
 synt: scaner
-	cc  -I./ -g -c synt.c scaner.o && ar cr synt.a synt.o
+	cc  -I./ -g -c synt.c 
 scaner:
-	cc  -I./ -g -c scaner.c && ar cr scaner.a scaner.o
+	cc  -I./ -g -c scaner.c 
 clean:
-	rm  *.o *.a compile
+	rm -f  *.o *.a compile
