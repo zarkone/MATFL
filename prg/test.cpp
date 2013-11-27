@@ -30,7 +30,7 @@ int main(){
     adsad();
 
 // !!!
-    void asd(){}
+    // void asd(){}
     
 }                  
 //com3 @#$%^&*()(*&^%$#$%^&*((*
