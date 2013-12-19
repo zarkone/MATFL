@@ -24,7 +24,10 @@ int main(){
         __int64 t55 = 0;
         
     }
-    for(i =234 +(5) + wer; i - 5 +2; j = i + i+1) a + ret[334 +gh];
+    for(i =234 +(5) + wer; i - 5 +2; j = i + i+1){
+        int for1, for2;
+        a + ret[334 +gh];
+    }
     int a,g;
 
     adsad();

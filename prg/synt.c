@@ -76,8 +76,8 @@ void FuncDescr(char *t, int *uk){
 
     type = (T1 == TMain) ? dTIntMain : dTVoidFunc;
 
-    Node *rollback;
-    current = addToTree(lex, type, current, &rollback);
+
+    current = addToTree(lex, type, current);
     
 
     T = scan(lex, t, uk);
@@ -98,7 +98,7 @@ void FuncDescr(char *t, int *uk){
     }
     
     Block(t, uk);
-    current = rollback;
+
 
 }
 
@@ -122,7 +122,7 @@ void VarDescr(char *t, int *uk){
             exit(EXIT_FAILURE);
         }
 
-        current = addToTree(lex, T, current, NULL);
+        current = addToTree(lex, T, current);
 
         T = scan(lex, t, uk);
         if (T == TSqBrackOpen) {
@@ -174,6 +174,9 @@ void Block(char *t, int *uk){
         exit(EXIT_FAILURE);
     }
 
+    Node *rollback;
+    current = createBlock(current, &rollback);
+    
     while(T != TEgBrackClose) {
 
         oldUk = *uk;
@@ -203,6 +206,7 @@ void Block(char *t, int *uk){
 
         }
     }
+    current = rollback;
 
 }
 void Operator(char *t,int *uk){

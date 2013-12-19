@@ -28,7 +28,7 @@ void printTree(Node *node, int depth, FILE *fp) {
         printTree(node->neighbour, depth, fp);
     }
 }
-Node* addToTree(const char* lex, DATA_TYPE type, Node *current, Node **rollback) {
+Node* addToTree(const char* lex, DATA_TYPE type, Node *current ) {
     
     printf("add %s to %s", lex, current->id);
     
@@ -50,24 +50,28 @@ Node* addToTree(const char* lex, DATA_TYPE type, Node *current, Node **rollback)
     current = current->neighbour;
         
 	if (type == dTInt || type == dTInt64) {
-
 		n->isAssignable = TRUE;
-		return current;
-		
 	} else {
-		
 		n->isAssignable = FALSE;
-		Node *vertex = current;
-
-		current->child = (Node *)calloc(1,sizeof(Node));
-        current->child->parent = current;
-		current = current->child;
-		current->type = dBlock;
-		current->id = (char *)calloc(8,sizeof(char));
-		current->elementsCount = 0;
-		strcpy(current->id,(char *) &"{ ... }\0");
-
-        *rollback = vertex;
-		return current;
 	}
+
+    return current;
+}
+
+Node* createBlock(Node *current, Node ** rollback) {
+
+    Node *vertex = current;
+
+    current->child = (Node *)calloc(1,sizeof(Node));
+    current->child->parent = current;
+    current = current->child;
+    current->type = dBlock;
+    current->id = (char *)calloc(8,sizeof(char));
+    current->elementsCount = 0;
+    strcpy(current->id,(char *) &"{ ... }\0");
+
+    *rollback = vertex;
+
+    return current;
+
 }

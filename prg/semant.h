@@ -28,6 +28,7 @@ typedef struct Node
     
 } Node;
 
-Node* addToTree(const char* lex, DATA_TYPE type, Node *current, Node **rollback);
+Node* addToTree(const char* lex, DATA_TYPE type, Node *current);
+Node* createBlock(Node *current, Node **rollback);
 void printTree(Node *node, int depth, FILE *fp);
 #endif
