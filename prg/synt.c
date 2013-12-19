@@ -4,15 +4,33 @@
 #include <defs.h>
 #include <scaner.h>
 #include <synt.h>
+#include <semant.h>
+
+Node *current;
 
 void Prg(char *t, int *uk){
 
     lex=(char *)calloc(MAXLEX,sizeof(char));	
     int oldUk = *uk, T = scan(lex, t, uk);
 
+    Node *root = (Node *)calloc(1, sizeof(Node));
+    root->type = dBlock;
+    root->isAssignable = FALSE;
+    root->parent = 0;
+    root->elementsCount = 0;
+    root->id = (char *)calloc(5, sizeof(char));
+    strcpy(root->id,(char *) &"^^^^\0");
+    current = root;
+            
 	while(T == TInt || T == TInt64 || T == TVoid || T == TEnd) {
-
+        
         if (T == TEnd) {
+
+            FILE *fp = fopen("semant-tree.txt", "w");
+
+            printTree(root->neighbour, 0, fp);
+            fclose(fp);
+            
             printf ("\n -*- Exit Success -*-\n uk: %d, lex: %s, T: %x \n", *uk, lex, T);
             exit(EXIT_SUCCESS);
         }
@@ -36,8 +54,10 @@ void Prg(char *t, int *uk){
 
         oldUk = *uk;
         T = scan(lex,t,uk);
+        
 	}
 
+    
     printf ("Expected EOF, <void> or <int >, got: uk: %d, lex: %s, T: %x", *uk, lex, T);
     exit(EXIT_FAILURE);
 
@@ -45,7 +65,7 @@ void Prg(char *t, int *uk){
 
 void FuncDescr(char *t, int *uk){
 
-	int	oldUk,
+	int	oldUk, type,
 		T = scan(lex, t, uk),
 		T1 = scan(lex, t, uk);
 	
@@ -53,7 +73,13 @@ void FuncDescr(char *t, int *uk){
        printf("Expected `void <id>` or `int main`, got: %x (uk: %d, lex: %s)", T, *uk, lex);
        exit(EXIT_FAILURE);
     }
-        
+
+    type = (T1 == TMain) ? dTIntMain : dTVoidFunc;
+
+    Node *rollback;
+    current = addToTree(lex, type, current, &rollback);
+    
+
     T = scan(lex, t, uk);
     T1 = scan(lex, t, uk);
 
@@ -71,19 +97,22 @@ void FuncDescr(char *t, int *uk){
         exit(EXIT_FAILURE);
     }
     
-    Block(t, uk); 
+    Block(t, uk);
+    current = rollback;
 
 }
 
 void VarDescr(char *t, int *uk){
 
-	int	oldUk,
+	int	oldUk, type,
 		T = scan(lex, t, uk);
 
     if (!(T == TInt || T == TInt64)) {
         printf ("Expected `int` or `__int64` , got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
+    
+    type = T;
     
     do {
 
@@ -92,7 +121,9 @@ void VarDescr(char *t, int *uk){
             printf ("Expected `<id>`, got: %x, uk: %d, lex: %s", T, *uk, lex);
             exit(EXIT_FAILURE);
         }
-        
+
+        current = addToTree(lex, T, current, NULL);
+
         T = scan(lex, t, uk);
         if (T == TSqBrackOpen) {
 
@@ -102,12 +133,17 @@ void VarDescr(char *t, int *uk){
                 printf ("Expected `DecConst` or `HexConst`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             }
-                    
+
+            int base = (T == TConstDec) ? 10 : 16;
+
+            current->elementsCount = strtol(lex,0,base);
+            
             T = scan(lex, t, uk);
             if (T != TSqBrackClose) {
                 printf ("Expected `]`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             }
+
 
             PossibleArrInit(t,uk);
             T = scan(lex, t, uk);
@@ -116,7 +152,9 @@ void VarDescr(char *t, int *uk){
 
             Expression(t,uk);
             T = scan(lex, t, uk);
-        }  
+        }
+        
+        
         
     } while(T == TSem);
 

@@ -1,5 +1,5 @@
 int a,b,c;
-void swaPasdsasw56565656aPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasdsaswaPasds1111111111a(){
+void swaPa(){
     __int64 a,b[9] = {1,2,3};
     for(i ; i < 5 +2; i = i+1)     for(i ; i < 5 +2; i = i+1)     for(i ; i < 5 +2; i = i+1)
     c +b[4+2] + r[22+ ff[u +    2]];

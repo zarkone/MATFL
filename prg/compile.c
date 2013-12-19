@@ -6,6 +6,7 @@
 #include <defs.h>
 #include <scaner.h>
 #include <synt.h>
+#include <semant.h>
 
 int main(int argc, char** argv) {
 
@@ -13,14 +14,12 @@ int main(int argc, char** argv) {
 		printf("Usage: ./compile <file.cpp> \n" );
 		return 1;
 	} 
+
 	char *t = NULL;
 	int uk = 0;
 	
 	FILE *fp = fopen (argv[1],"r");;
 
-
-
-	
 	if (fp == NULL){
 		printf("Cannot open file: %s\n", argv[1]);
 		exit(EXIT_FAILURE);
@@ -35,7 +34,6 @@ int main(int argc, char** argv) {
     fclose(fp);
 
     t[fsize] = 0;
-
  
 	lex=(char *)calloc(MAXLEX,sizeof(char));
 
