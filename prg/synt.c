@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ void Prg(char *t, int *uk){
     root->elementsCount = 0;
     root->id = (char *)calloc(5, sizeof(char));
     strcpy(root->id,(char *) &"^^^^\0");
+
     current = root;
             
 	while(T == TInt || T == TInt64 || T == TVoid || T == TEnd) {
@@ -31,7 +33,7 @@ void Prg(char *t, int *uk){
             printTree(root->neighbour, 0, fp);
             fclose(fp);
             
-            printf ("\n -*- Exit Success -*-\n uk: %d, lex: %s, T: %x \n", *uk, lex, T);
+            printf ("\n -*- Exit Success -*-\n\n");
             exit(EXIT_SUCCESS);
         }
         
@@ -70,16 +72,20 @@ void FuncDescr(char *t, int *uk){
 		T1 = scan(lex, t, uk);
 	
 	if (!((T == TVoid  && T1 == Tid) || (T == TInt && T1 == TMain))) {
-       printf("Expected `void <id>` or `int main`, got: %x (uk: %d, lex: %s)", T, *uk, lex);
-       exit(EXIT_FAILURE);
+        printf("Expected `void <id>` or `int main`, got: %x (uk: %d, lex: %s)", T, *uk, lex);
+        exit(EXIT_FAILURE);
     }
 
     type = (T1 == TMain) ? dTIntMain : dTVoidFunc;
 
+    if ( !findUp(current, lex, FALSE) ) {
+        current = addToTree(lex, type, current);
+    } else {
+        printf ("ERROR: Function %s is already declared. \n", lex);
+        exit(EXIT_FAILURE);
+    }
 
-    current = addToTree(lex, type, current);
     
-
     T = scan(lex, t, uk);
     T1 = scan(lex, t, uk);
 
@@ -96,7 +102,8 @@ void FuncDescr(char *t, int *uk){
         printf ("Expected `{ `, got: %x (uk: %d, lex: %s)", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
-    
+
+
     Block(t, uk);
 
 
@@ -111,23 +118,35 @@ void VarDescr(char *t, int *uk){
         printf ("Expected `int` or `__int64` , got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
-    
-    type = T;
+
+    type = (T == TInt) ? dTInt : dTInt64;
     
     do {
 
         T = scan(lex, t, uk);
+        
         if (T != Tid) {
             printf ("Expected `<id>`, got: %x, uk: %d, lex: %s", T, *uk, lex);
             exit(EXIT_FAILURE);
         }
 
-        current = addToTree(lex, T, current);
+        char *id = (char *)calloc(strlen(lex), sizeof(char));
+        strcpy(id, lex);
+        int idUk = *uk;
 
+        Node *declaredVar = findUp(current, id, TRUE);
+        
+        if ( declaredVar ) {
+            printf ("ERROR: Variable %s is declared before. [id: %d] \n", id, idUk);
+            exit(EXIT_FAILURE);
+        }
+        
+        current = addToTree(lex, type, current);
+        
         T = scan(lex, t, uk);
+        
         if (T == TSqBrackOpen) {
 
-            
             T = scan(lex, t, uk);
             if (!(T == TConstDec || T == TConstHex)) {
                 printf ("Expected `DecConst` or `HexConst`, got: %x, uk: %d, lex: %s", T, *uk, lex);
@@ -138,14 +157,18 @@ void VarDescr(char *t, int *uk){
 
             current->elementsCount = strtol(lex,0,base);
             
+            if (current->elementsCount < 1) {
+                printf ("Array length must me at least 1: %x, uk: %d, lex: %s", T, *uk, lex);
+                exit(EXIT_FAILURE);
+            }
             T = scan(lex, t, uk);
             if (T != TSqBrackClose) {
                 printf ("Expected `]`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             }
-
-
-            PossibleArrInit(t,uk);
+            
+            
+            PossibleArrInit(t,uk, current->elementsCount);
             T = scan(lex, t, uk);
             
         } else if (T == TAssign) {
@@ -175,7 +198,7 @@ void Block(char *t, int *uk){
     }
 
     Node *rollback;
-    current = createBlock(current, &rollback);
+    current = createBlockAsChild(current, &rollback);
     
     while(T != TEgBrackClose) {
 
@@ -206,6 +229,7 @@ void Block(char *t, int *uk){
 
         }
     }
+    
     current = rollback;
 
 }
@@ -223,14 +247,22 @@ void Operator(char *t,int *uk){
 
         *uk = oldUk;
 
+        current = current->neighbour = createBlockNode(current);
+
+        // current = addToTree(&"{ ... }", dBlock, current);
         Block(t,uk);
         return;
         
     }
     
     if (T == Tid) {
-        T = scan(lex,t,uk);
 
+        char *id = (char *)calloc(strlen(lex), sizeof(char));
+        strcpy(id, lex);
+        int idUk = *uk;
+        
+        T = scan(lex,t,uk);
+        
         if (T == TCrBrackOpen) {
 
             T = scan(lex,t,uk);
@@ -239,6 +271,20 @@ void Operator(char *t,int *uk){
                 printf ("Expected `<id>()`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             } else {
+                
+                Node *declaredFunction = findUp(current, id, FALSE);
+                
+                if ( !declaredFunction ) {
+                    printf ("ERROR: Function %s is not declared. [uk: %d] \n", id, idUk);
+                    exit(EXIT_FAILURE);
+                }
+
+                BOOL isFunction = (declaredFunction->type == dTVoidFunc || declaredFunction->type == dTIntMain);
+                if (!isFunction) {
+                    printf ("ERROR:  %s is declared but it is not a function. [uk: %d] \n", id, idUk);
+                    exit(EXIT_FAILURE);
+                }
+                    
 
                 T = scan(lex,t,uk);
             }
@@ -269,7 +315,8 @@ void Operator(char *t,int *uk){
     
 }
 
-void PossibleArrInit(char *t,int *uk){
+void PossibleArrInit(char *t,int *uk, int elementsCount){
+
     
     int oldUk = *uk, T = scan(lex,t,uk);
 
@@ -283,6 +330,8 @@ void PossibleArrInit(char *t,int *uk){
 
     do {
         
+        elementsCount--;
+
         T = scan(lex,t,uk);
 
         if (T != TConstDec && T != TConstHex) {
@@ -294,11 +343,15 @@ void PossibleArrInit(char *t,int *uk){
         if (T == TEgBrackClose) { break; }
 
     } while(T == TSem);
-
+    
     if (T != TEgBrackClose) {
         printf ("Expected  `}`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
+    }
 
+    if (elementsCount < 0) {
+        printf ("To few elements in array init. uk: %d ", *uk);
+        exit(EXIT_FAILURE);
     }
 }
 
@@ -397,23 +450,37 @@ void A6(char *t,int *uk){
 
 
     int oldUk = *uk, T = scan(lex,t,uk);
-
+    int idUk = *uk;
+    char *id = (char *)calloc(strlen(lex), sizeof(char));
+    strcpy(id, lex);
+        
     if (T == TCrBrackOpen){
 
         Expression(t,uk);
-
         oldUk = *uk;
         T = scan(lex,t,uk);
         
         if (T != TCrBrackClose){
-
             printf ("Expected  `)`, got: %x, uk: %d, lex: %s", T, *uk, lex);
             exit(EXIT_FAILURE);
-            
-        } else { }
-        
+        } 
         
     } else if (T == Tid) {
+
+        Node *declaredVar = findUp(current, id, FALSE);
+        
+        if ( !declaredVar ) {
+            printf ("ERROR: Variable %s is not declared. [id: %d] \n", id, idUk);
+            exit(EXIT_FAILURE);
+        }
+
+        BOOL isVar = (declaredVar->type == dTInt || declaredVar->type == dTInt64);
+        BOOL isArray =  declaredVar->elementsCount > 0;
+
+        if (!isVar) {
+            printf ("ERROR:  %s is declared but it is not a variable, it's a function. [uk: %d] \n", id, idUk);
+            exit(EXIT_FAILURE);
+        }
 
         oldUk = *uk;
         T = scan(lex,t,uk);
@@ -421,14 +488,22 @@ void A6(char *t,int *uk){
         if (T == TSqBrackOpen){
 
             Expression(t,uk);
-            
             T = scan(lex,t,uk);
-            if (T != TSqBrackClose){
+            
+            if (T != TSqBrackClose) {
                 printf ("Expected  `]`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             }
             
-        } else { *uk = oldUk; }
+        } else {
+            
+            if (isArray) {
+                printf ("ERROR:  %s is declared but it is not a variable, it's an array. [uk: %d] \n", id, idUk);
+                exit(EXIT_FAILURE);
+            }
+
+            *uk = oldUk;
+        }
     } else if ( T != TConstDec && T != TConstHex) {
         printf ("Expected  `(Expr)` or `id` or `id[expr]` or `const`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
