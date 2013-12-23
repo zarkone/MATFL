@@ -1,20 +1,17 @@
-run: main
+run: main 
 	./compile test.cpp
-	perl make-tree.pl < semant-tree.txt > semant-tree.tree
+
 main: buildlib
 	cc -I./ -g -Wall compile.c -L./ -lcompile -o compile
 
-buildlib: scaner synt semant
-	ar ruv libcompile.a scaner.o synt.o semant.o
+buildlib: scaner ll1
+	ar ruv libcompile.a scaner.o ll1.o
 	ranlib libcompile.a
 
-semant: synt
-	cc  -I./ -g -c semant.c 
-synt: scaner
-	cc  -I./ -g -c synt.c 
+ll1: scaner
+	cc  -I./ -g -c ll1.c 
 scaner:
 	cc  -I./ -g -c scaner.c 
-
 clean:
 	rm -f  *.o *.a compile
 tags:

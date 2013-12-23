@@ -5,8 +5,7 @@
 #include <string.h>
 #include <defs.h>
 #include <scaner.h>
-#include <synt.h>
-#include <semant.h>
+#include <ll1.h>
 
 int main(int argc, char** argv) {
 
@@ -16,9 +15,7 @@ int main(int argc, char** argv) {
 	} 
 
 	char *t = NULL;
-	int uk = 0;
-	
-	FILE *fp = fopen (argv[1],"r");;
+    FILE *fp = fopen (argv[1],"r");;
 
 	if (fp == NULL){
 		printf("Cannot open file: %s\n", argv[1]);
@@ -35,11 +32,10 @@ int main(int argc, char** argv) {
 
     t[fsize] = 0;
  
-	lex=(char *)calloc(MAXLEX,sizeof(char));
-
-	Prg(t, &uk);
+    // Prg(t, &uk);
+    ll1Parse(t);
     
-    free(lex);
+
     free(t);
     
 	// while((type = scan(lex, t, &uk)) != TEnd){
