@@ -8,15 +8,16 @@
 #include <semant.h>
 
 Node *current;
+int INTERPRET_FLAG = 1;
 
 void Prg(char *t, int *uk){
 
-    lex=(char *)calloc(MAXLEX,sizeof(char));	
+    // lex=(char *)calloc(MAXLEX,sizeof(char));	
     int oldUk = *uk, T = scan(lex, t, uk);
 
     Node *root = (Node *)calloc(1, sizeof(Node));
     root->type = dBlock;
-    root->isAssignable = FALSE;
+    root->isAssignable = 0;
     root->parent = 0;
     root->elementsCount = 0;
     root->id = (char *)calloc(5, sizeof(char));
@@ -103,8 +104,10 @@ void FuncDescr(char *t, int *uk){
         exit(EXIT_FAILURE);
     }
 
-
+    if (type != dTIntMain) { INTERPRET_FLAG = 0; }
     Block(t, uk);
+    if (type != dTIntMain) { INTERPRET_FLAG = 1; }
+    
 
 
 }
@@ -154,26 +157,46 @@ void VarDescr(char *t, int *uk){
             }
 
             int base = (T == TConstDec) ? 10 : 16;
-
             current->elementsCount = strtol(lex,0,base);
-            
+           
             if (current->elementsCount < 1) {
                 printf ("Array length must me at least 1: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             }
+
             T = scan(lex, t, uk);
+
             if (T != TSqBrackClose) {
                 printf ("Expected `]`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             }
-            
-            
-            PossibleArrInit(t,uk, current->elementsCount);
+                
+            if (INTERPRET_FLAG) {
+                switch(current->type) {
+
+                case dTInt: { current->dataAsIntArray = (int *)calloc(current->elementsCount, sizeof(int)); };break;
+                case dTInt64: { current->dataAsInt64Array = (int64_t *)calloc(current->elementsCount, sizeof(int64_t)); };break;
+
+                }
+            }
+
+            PossibleArrInit(t,uk);
             T = scan(lex, t, uk);
             
         } else if (T == TAssign) {
+            Node * value;
+            value = Expression(t,uk);
+            
+            if (INTERPRET_FLAG) {
+                if (typeCast(current, value) < 0) {
 
-            Expression(t,uk);
+                    printf ("Expected int and __int64 types to cast, got: %d, %d\n", current->type, value->type);
+                    printf (" uk: %d, lex: %s",  *uk, lex);
+                    printf ("%s %d\n",value->id, value->dataAsInt64);
+                    exit(EXIT_FAILURE);
+                }
+            }
+
             T = scan(lex, t, uk);
         }
         
@@ -310,15 +333,13 @@ void Operator(char *t,int *uk){
         printf ("Expected  `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
-        
-
     
 }
 
-void PossibleArrInit(char *t,int *uk, int elementsCount){
+void PossibleArrInit(char *t,int *uk) {
 
-    
-    int oldUk = *uk, T = scan(lex,t,uk);
+    int oldUk = *uk, 
+        T = scan(lex,t,uk);
 
     if (T != TAssign) { *uk = oldUk; return; }
 
@@ -327,10 +348,15 @@ void PossibleArrInit(char *t,int *uk, int elementsCount){
         printf ("Expected  `{`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
+    
+    int eIndex = current->elementsCount;
 
     do {
         
-        elementsCount--;
+        if (eIndex < 1) {
+            printf ("To few elements in array init. uk: %d ", *uk);
+            exit(EXIT_FAILURE);
+        }
 
         T = scan(lex,t,uk);
 
@@ -338,9 +364,19 @@ void PossibleArrInit(char *t,int *uk, int elementsCount){
             printf ("Expected  `ConstDec` or `ConstHex`, got: %x, uk: %d, lex: %s", T, *uk, lex);
             exit(EXIT_FAILURE);
         }
-        
+
+        int base = (T == TConstDec) ? 10 : 16;
+
+        switch(current->type)
+        {
+        case dTInt: { current->dataAsIntArray[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
+        case dTInt64: { current->dataAsInt64Array[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
+        }
+
         T = scan(lex,t,uk);
         if (T == TEgBrackClose) { break; }
+
+        eIndex--;
 
     } while(T == TSem);
     
@@ -349,122 +385,214 @@ void PossibleArrInit(char *t,int *uk, int elementsCount){
         exit(EXIT_FAILURE);
     }
 
-    if (elementsCount < 0) {
-        printf ("To few elements in array init. uk: %d ", *uk);
-        exit(EXIT_FAILURE);
-    }
 }
 
-void Expression(char *t,int *uk){
+Node * Expression(char *t,int *uk){
 
     int oldUk = *uk, T;
+    Node *value;
+    NodeStack *stack;
+
+
+    init_stack(stack, 128); 
 
     do {
         
-        A2(t,uk);
+        value = A2(t,uk, stack);
         oldUk = *uk;
         T = scan(lex,t,uk);
 
+
     } while(T == TAssign);
+    
+    if (stack->length > 0) {
+        Node *var;
+        
+        while(var = pop_stack(stack)) {
+
+            if (var->elementsCount > 0) {
+
+                switch(var->type) {
+
+                case dTInt: { var->dataAsIntArray[var->currentArrayIndex] = value->dataAsInt;  }; break;
+                case dTInt64: { var->dataAsInt64Array[var->currentArrayIndex] = value->dataAsInt64;  }; break;
+
+                }
+
+            }
+            else {
+                var->dataAsInt64 =  value->dataAsInt64;
+            }
+
+        }
+    }
 
     *uk = oldUk;
     
+    return value;
+    
 }
 
-void A2(char *t,int *uk){
+Node * A2(char *t,int *uk, NodeStack *stack){
 
     int oldUk = *uk;
+    Node * value;
 
-    A3(t,uk);
+    value = A3(t,uk,stack);
+
     oldUk = *uk;
     int T = scan(lex,t,uk);
-    
+
     while (T == TAnd || T == TOr) {
-        A3(t,uk);
+
+        Node * newValue = A3(t,uk,0);
+
+        if (T == TAnd) {
+            value->dataAsInt = value->dataAsInt && newValue->dataAsInt;
+        } else {
+            value->dataAsInt = value->dataAsInt || newValue->dataAsInt;
+        }
+
         oldUk = *uk;
         T = scan(lex,t,uk);
     }
+
     *uk = oldUk;
-    
+
+    return value;
 }
-void A3(char *t,int *uk){
+Node * A3(char *t,int *uk, NodeStack *stack){
 
-    int oldUk = *uk;
+    int oldUk = *uk, isNot = 0;
 
-    int    T = scan(lex,t,uk);
-    if (T != TNot) { *uk = oldUk; }
+    int T = scan(lex,t,uk);
     
-    A4(t,uk);
+    if (T != TNot) { *uk = oldUk; }
+    else { isNot = 1; }
+    
+    Node *value;
+    value = A4(t,uk,stack);
+
+    if (isNot) { value->dataAsInt = !value->dataAsInt; }
+
     oldUk = *uk;
     T = scan(lex,t,uk);
     
-    while (T == TGrEq || T == TGr || T == TLess || T == TLess || T == TEq || T == TNotEq) {
-        A4(t,uk);
+    while (T == TGrEq || T == TGr || T == TLess || T == TLessEq || T == TEq || T == TNotEq) {
+
+        Node *newValue = A4(t,uk,0);
+
+        switch(T) {
+   
+        case TGrEq: { value->dataAsInt = value->dataAsInt >= newValue->dataAsInt; };break;
+        case TGr: { value->dataAsInt = value->dataAsInt > newValue->dataAsInt; };break;
+        case TLess: { value->dataAsInt = value->dataAsInt < newValue->dataAsInt; };break;
+        case TLessEq: { value->dataAsInt = value->dataAsInt <= newValue->dataAsInt; };break;
+        case TEq: { value->dataAsInt = value->dataAsInt == newValue->dataAsInt; };break;
+        case TNotEq: { value->dataAsInt = value->dataAsInt != newValue->dataAsInt; };break;
+
+        }
+
         oldUk = *uk;
         T = scan(lex,t,uk);
 
     }
     
     *uk = oldUk;
+
+    return value;
 }
 
-void A4(char *t,int *uk){
+Node * A4(char *t,int *uk, NodeStack *stack){
 
-    int oldUk = *uk;
+    int oldUk = *uk, isNegative = 0;
 
     int T = scan(lex,t,uk);
     if (T != TPlus && T != TMinus) { *uk = oldUk; }
-    
-    A5(t,uk);
+    else if (T == TMinus) { isNegative = 1; }
+
+    Node *value;
+    value = A5(t,uk,stack);
+    if (isNegative) { value->dataAsInt64 = -value->dataAsInt64; }
+
     oldUk = *uk;
     T = scan(lex,t,uk);
     
     while (T == TPlus || T == TMinus ) {
-        A5(t,uk);
+
+        Node *newValue = A5(t,uk,0);
+        switch(T) {
+   
+        case TPlus: { value->dataAsInt = value->dataAsInt + newValue->dataAsInt; };break;
+        case TMinus: { value->dataAsInt = value->dataAsInt - newValue->dataAsInt; };break;
+
+        }
+        
         oldUk = *uk;
         T = scan(lex,t,uk);
 
     }
     
     *uk = oldUk;
+
+    return value;
 }
 
-void A5(char *t,int *uk){
+Node * A5(char *t,int *uk, NodeStack *stack){
 
     int oldUk = *uk;
+    Node *value;
+    value = A6(t,uk, stack);
 
-    A6(t,uk);
     oldUk = *uk;
     int T = scan(lex,t,uk);
     
     while (T == TMul || T == TDiv || T == TRest ) {
-        A6(t,uk);
+        Node *newValue = A6(t,uk,0);
+        switch(T) {
+   
+        case TMul: { value->dataAsInt = value->dataAsInt * newValue->dataAsInt; };break;
+        case TRest: { value->dataAsInt = value->dataAsInt % newValue->dataAsInt; };break;
+        case TDiv: { 
+            if (newValue->dataAsInt == 0) {
+                printf ("Devision by zero (uk: %d)",  *uk);
+                exit(EXIT_FAILURE);
+            }
+            value->dataAsInt = value->dataAsInt / newValue->dataAsInt; 
+        };break;
+
+        }
+
         oldUk = *uk;
         T = scan(lex,t,uk);
 
     }
     
     *uk = oldUk;
-}
-void A6(char *t,int *uk){
 
+    return value;
+
+}
+
+Node * A6(char *t,int *uk, NodeStack *stack) {
 
     int oldUk = *uk, T = scan(lex,t,uk);
     int idUk = *uk;
     char *id = (char *)calloc(strlen(lex), sizeof(char));
     strcpy(id, lex);
-        
-    if (T == TCrBrackOpen){
+    Node * value = (Node *)calloc(1, sizeof(Node));        
 
-        Expression(t,uk);
+    if (T == TCrBrackOpen){
+        
+        value = Expression(t,uk);
         oldUk = *uk;
         T = scan(lex,t,uk);
-        
+
         if (T != TCrBrackClose){
             printf ("Expected  `)`, got: %x, uk: %d, lex: %s", T, *uk, lex);
             exit(EXIT_FAILURE);
         } 
-        
+
     } else if (T == Tid) {
 
         Node *declaredVar = findUp(current, id, FALSE);
@@ -485,15 +613,35 @@ void A6(char *t,int *uk){
         oldUk = *uk;
         T = scan(lex,t,uk);
         
-        if (T == TSqBrackOpen){
+        if (T == TSqBrackOpen) {
 
-            Expression(t,uk);
+            Node * index = Expression(t,uk);
             T = scan(lex,t,uk);
             
             if (T != TSqBrackClose) {
                 printf ("Expected  `]`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
             }
+            
+            if (!isArray) {
+                printf ("ERROR:  %s is not array. [uk: %d] \n", id, idUk);
+                exit(EXIT_FAILURE);
+            }
+            
+            switch(declaredVar->type) {
+
+            case dTInt: { value->dataAsInt = declaredVar->dataAsIntArray[index->dataAsInt]; }; break;
+            case dTInt64: { value->dataAsInt64 = declaredVar->dataAsInt64Array[index->dataAsInt]; }; break;
+
+            }
+            
+            value->type = declaredVar->type;
+            declaredVar->currentArrayIndex = index->dataAsInt;
+
+            if (stack != 0) {
+                push_stack(stack,declaredVar);
+            }
+
             
         } else {
             
@@ -503,14 +651,30 @@ void A6(char *t,int *uk){
             }
 
             *uk = oldUk;
+            value->type = declaredVar->type;
+            value->dataAsInt64 = declaredVar->dataAsInt64;
+
+            if (stack != 0) {
+                push_stack(stack,declaredVar);
+            }
+
         }
+
     } else if ( T != TConstDec && T != TConstHex) {
         printf ("Expected  `(Expr)` or `id` or `id[expr]` or `const`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
 
-    } 
-    
+    } else {
 
+        int base = (T == TConstDec) ? 10 : 16;
+
+        value->dataAsInt = strtol(lex,0,base);
+        value->type = dTInt;
+
+
+    }
+
+    return value;
 
 }
 
