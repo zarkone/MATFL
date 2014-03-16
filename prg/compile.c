@@ -5,7 +5,7 @@
 #include <string.h>
 #include <defs.h>
 #include <scaner.h>
-#include <ll1.h>
+#include <synt.h>
 
 int main(int argc, char** argv) {
 
@@ -32,8 +32,8 @@ int main(int argc, char** argv) {
 
     t[fsize] = 0;
  
-    // Prg(t, &uk);
-    ll1Parse(t);
+    Prg(t, &uk);
+    // ll1Parse(t);
     
 
     free(t);
