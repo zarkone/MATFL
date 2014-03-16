@@ -95,25 +95,81 @@ Skip:
 	if(t[*uk] == ',') { lex[i++] = t[(*uk)++]; lex[i] = '\0';return TSem; }
     if(t[*uk] == ';') { lex[i++] = t[(*uk)++]; lex[i] = '\0';return TComma; }
 
+	if(t[*uk] == '&') { 
+		if(t[*uk + 1] == '&') { 
+            
+            lex[i++] = t[(*uk)++];
+            lex[i++] = t[(*uk)++]; 
+            lex[i] = '\0'; 
+
+            return TAnd; 
+        }
+	}
+	if(t[*uk] == '|') { 
+		if(t[*uk + 1] == '|') { 
+            
+            lex[i++] = t[(*uk)++];
+            lex[i++] = t[(*uk)++]; 
+            lex[i] = '\0'; 
+
+            return TOr; 
+        }
+	}
 	if(t[*uk] == '>') { 
-		lex[i++] = t[(*uk)++];  
-		if(t[*uk] == '=') { lex[i++] = t[*uk]; lex[i] = '\0'; return TGrEq; }
-		else {  lex[i] = '\0'; return TGr;}
+		if(t[*uk + 1] == '=') { 
+            
+            lex[i++] = t[(*uk)++];
+            lex[i++] = t[(*uk)++]; 
+            lex[i] = '\0'; 
+
+            return TGrEq; 
+        } else {
+            (*uk)++;
+            lex[i] = '\0'; 
+            return TGr;
+        }
 	}
 	if(t[*uk] == '<') { 
-		lex[i++] = t[(*uk)++];  
-		if(t[*uk] == '=') { lex[i++] = t[*uk]; lex[i] = '\0'; return TLessEq; }
-		else {  lex[i] = '\0'; return TLess;}
+		if(t[*uk + 1] == '=') { 
+            
+            lex[i++] = t[(*uk)++];
+            lex[i++] = t[(*uk)++]; 
+            lex[i] = '\0'; 
+
+            return TLessEq; 
+        } else {
+            (*uk)++;
+            lex[i] = '\0'; 
+            return TLess;
+        }
 	}
 	if(t[*uk] == '!') { 
-		lex[i++] = t[(*uk)++];  
-		if(t[*uk] == '=') { lex[i++] = t[*uk]; lex[i] = '\0'; return TNotEq; }
-		else {  lex[i] = '\0'; return TNot;}
+		if(t[*uk + 1] == '=') { 
+            
+            lex[i++] = t[(*uk)++];
+            lex[i++] = t[(*uk)++]; 
+            lex[i] = '\0'; 
+
+            return TNotEq; 
+        } else {
+            (*uk)++;
+            lex[i] = '\0'; 
+            return TNot;
+        }
 	}
 	if(t[*uk] == '=') { 
-		lex[i++] = t[(*uk)++];  
-		if(t[*uk] == '=') { lex[i++] = t[*uk]; lex[i] = '\0'; return TEq; }
-		else {  lex[i] = '\0'; return TAssign;}
+		if(t[*uk + 1] == '=') { 
+            
+            lex[i++] = t[(*uk)++];
+            lex[i++] = t[(*uk)++]; 
+            lex[i] = '\0'; 
+
+            return TEq; 
+        } else {
+            (*uk)++;
+            lex[i] = '\0'; 
+            return TAssign;
+        }
 	}
 
     lex[i++] = t[*uk];
