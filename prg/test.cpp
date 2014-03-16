@@ -1,9 +1,9 @@
-int a,v,b,c,d,r[10],i,wer,j;
+int a,aeeeeeeeee,v,b,c,d,r[10],i,wer,j;
 
 void swaPa(){
-    
-    __int64 a,b[0xC99] = {1,2,3}, i,r[23], ff[23],u;
-    int yyy,uuu,iiii;{ { int yyy,uuu,ii; } int yyy,uuu,iiii; ii = 1 * ii;  }{ int yyy,uuu,iiii = 5; 6;}{} yyy  = 1; 575;
+    r[23] = 5;
+    __int64 a,b[0x9] = {1,2,3}, i,r[23], ff[23],u;
+    int yyy,uuu,iiii;{ { int yyy,uuu,ii; } int yyy,uuu,iiii; iiii = 1 * 2;  }{ int yyy,uuu,iiii = 5; 6;}{} yyy  = 1; 575;
     for(i ; i % 5 *2; i = i*1)     for(i ; i % 5 *2; i = i*1)     for(i ; i % 5 *2; i = i*1)
     c *b[4*2] * r[22* ff[u *    2]];
     int asd = 5 % r[2];
@@ -17,7 +17,7 @@ void adsad () {
 
 }
 int ret, gh;
-int function1,a;//
+int function12,dda;//
 
 int main(){
 //com1
@@ -27,7 +27,7 @@ int main(){
     int jvh = (35 *15), bg3=0xffba00, m[25] = {2,3,4}, ddt3, h, u8, qwed;
  // Оператор сканиует через одного!
     7;;77;;; ;765; 888; 999;;;; ; (567) ; ;; ;
-    a = asdfkjhasdf * (sfhkjaf) % c/ 7/ 7/jvh/ 7/7 /7 /h /8 /u8 /8 / b[4*2] * r[22];
+    a = a * (2) % c/ 7/ 7/jvh/ 7/7 /7 /h /8 /u8 /8 / b[4*2] * r[22];
     qwed;
 
 
@@ -38,7 +38,7 @@ int main(){
     for(a;b;6)for(i ; i % 5 *2; i = i*1){
             a = a; b;
 
-        __int64 t55 = 0;
+            __int64 t55 = 0;
         
     }
     for(i =234 *(5) * wer; i / 5 *2; j = i * i*1){
