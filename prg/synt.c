@@ -184,18 +184,20 @@ void VarDescr(char *t, int *uk){
             T = scan(lex, t, uk);
             
         } else if (T == TAssign) {
-            Node * value;
-            value = Expression(t,uk);
-            
-            if (INTERPRET_FLAG) {
-                if (typeCast(current, value) < 0) {
 
-                    printf ("Expected int and __int64 types to cast, got: %d, %d\n", current->type, value->type);
-                    printf (" uk: %d, lex: %s",  *uk, lex);
-                    printf ("%s %d\n",value->id, value->dataAsInt64);
-                    exit(EXIT_FAILURE);
-                }
-            }
+            Node * value = (Node *)calloc(1, sizeof(Node));        
+            Expression(t,uk, value);
+            
+            // if (INTERPRET_FLAG) {
+            //     if (typeCast(current, value) < 0) {
+
+            //         printf ("Expected int and __int64 types to cast, got: %d, %d\n", current->type, value->type);
+            //         printf (" uk: %d, lex: %s",  *uk, lex);
+            //         printf ("%s %d\n",value->id, value->dataAsInt64);
+            //         exit(EXIT_FAILURE);
+            //     }
+            // }
+            free(value);
 
             T = scan(lex, t, uk);
         }
@@ -315,7 +317,11 @@ void Operator(char *t,int *uk){
         } else {
             
             *uk = oldUk;
-            Expression(t,uk);
+
+            Node * value = (Node *)calloc(1, sizeof(Node));        
+            Expression(t,uk,value);
+            free(value);
+
             T = scan(lex,t,uk);
         }
         
@@ -324,7 +330,10 @@ void Operator(char *t,int *uk){
                T == TConstHex ) {
 
         *uk = oldUk;
-        Expression(t,uk);
+        Node * value = (Node *)calloc(1, sizeof(Node));        
+        Expression(t,uk, value);
+        free(value);
+
         T = scan(lex,t,uk);
      
     }
@@ -387,24 +396,27 @@ void PossibleArrInit(char *t,int *uk) {
 
 }
 
-Node * Expression(char *t,int *uk){
+void Expression(char *t,int *uk, Node *value){
 
     int oldUk = *uk, T;
-    Node *value;
-    NodeStack *stack;
 
+    NodeStack *stack = malloc(sizeof(NodeStack));
 
     init_stack(stack, 128); 
 
     do {
         
-        value = A2(t,uk, stack);
+        A2(t,uk, stack, value);
         oldUk = *uk;
         T = scan(lex,t,uk);
-
+        
+        if (T == TAssign && !value->isAssignable) {
+            printf ("lvalue required.  uk: %d, lex: %s",  *uk, lex);
+            exit(EXIT_FAILURE);
+        }
 
     } while(T == TAssign);
-    
+
     if (stack->length > 0) {
         Node *var;
         
@@ -418,7 +430,6 @@ Node * Expression(char *t,int *uk){
                 case dTInt64: { var->dataAsInt64Array[var->currentArrayIndex] = value->dataAsInt64;  }; break;
 
                 }
-
             }
             else {
                 var->dataAsInt64 =  value->dataAsInt64;
@@ -427,41 +438,40 @@ Node * Expression(char *t,int *uk){
         }
     }
 
+
+    free(stack->items);
+
     *uk = oldUk;
-    
-    return value;
     
 }
 
-Node * A2(char *t,int *uk, NodeStack *stack){
+void A2(char *t,int *uk,NodeStack *stack,  Node *value){
 
     int oldUk = *uk;
-    Node * value;
 
-    value = A3(t,uk,stack);
+    A3(t,uk,stack, value);
 
     oldUk = *uk;
     int T = scan(lex,t,uk);
+    Node *newValue = malloc(sizeof(Node));
 
     while (T == TAnd || T == TOr) {
 
-        Node * newValue = A3(t,uk,0);
-
+        A3(t,uk,0,newValue);
+        value->isAssignable = 0;
         if (T == TAnd) {
-            value->dataAsInt = value->dataAsInt && newValue->dataAsInt;
+            value->dataAsInt64 = value->dataAsInt64 && newValue->dataAsInt64;
         } else {
-            value->dataAsInt = value->dataAsInt || newValue->dataAsInt;
+            value->dataAsInt64 = value->dataAsInt64 || newValue->dataAsInt64;
         }
 
         oldUk = *uk;
         T = scan(lex,t,uk);
     }
-
+    free(newValue);
     *uk = oldUk;
-
-    return value;
 }
-Node * A3(char *t,int *uk, NodeStack *stack){
+void A3(char *t,int *uk,NodeStack *stack,  Node *value){
 
     int oldUk = *uk, isNot = 0;
 
@@ -470,26 +480,30 @@ Node * A3(char *t,int *uk, NodeStack *stack){
     if (T != TNot) { *uk = oldUk; }
     else { isNot = 1; }
     
-    Node *value;
-    value = A4(t,uk,stack);
 
-    if (isNot) { value->dataAsInt = !value->dataAsInt; }
+    A4(t,uk,stack,value);
+    if (isNot) { 
+        value->isAssignable = 0;
+        value->dataAsInt64 = !value->dataAsInt64; 
+    }  
 
     oldUk = *uk;
     T = scan(lex,t,uk);
+
+    Node *newValue = malloc(sizeof(Node));
     
     while (T == TGrEq || T == TGr || T == TLess || T == TLessEq || T == TEq || T == TNotEq) {
 
-        Node *newValue = A4(t,uk,0);
+        A4(t,uk,0,newValue);
 
         switch(T) {
    
-        case TGrEq: { value->dataAsInt = value->dataAsInt >= newValue->dataAsInt; };break;
-        case TGr: { value->dataAsInt = value->dataAsInt > newValue->dataAsInt; };break;
-        case TLess: { value->dataAsInt = value->dataAsInt < newValue->dataAsInt; };break;
-        case TLessEq: { value->dataAsInt = value->dataAsInt <= newValue->dataAsInt; };break;
-        case TEq: { value->dataAsInt = value->dataAsInt == newValue->dataAsInt; };break;
-        case TNotEq: { value->dataAsInt = value->dataAsInt != newValue->dataAsInt; };break;
+        case TGrEq: { value->dataAsInt64 = value->dataAsInt64 >= newValue->dataAsInt64; };break;
+        case TGr: { value->dataAsInt64 = value->dataAsInt64 > newValue->dataAsInt64; };break;
+        case TLess: { value->dataAsInt64 = value->dataAsInt64 < newValue->dataAsInt64; };break;
+        case TLessEq: { value->dataAsInt64 = value->dataAsInt64 <= newValue->dataAsInt64; };break;
+        case TEq: { value->dataAsInt64 = value->dataAsInt64 == newValue->dataAsInt64; };break;
+        case TNotEq: { value->dataAsInt64 = value->dataAsInt64 != newValue->dataAsInt64; };break;
 
         }
 
@@ -497,13 +511,11 @@ Node * A3(char *t,int *uk, NodeStack *stack){
         T = scan(lex,t,uk);
 
     }
-    
+    free(newValue);    
     *uk = oldUk;
-
-    return value;
 }
 
-Node * A4(char *t,int *uk, NodeStack *stack){
+void A4(char *t,int *uk,NodeStack *stack, Node *value){
 
     int oldUk = *uk, isNegative = 0;
 
@@ -511,20 +523,26 @@ Node * A4(char *t,int *uk, NodeStack *stack){
     if (T != TPlus && T != TMinus) { *uk = oldUk; }
     else if (T == TMinus) { isNegative = 1; }
 
-    Node *value;
-    value = A5(t,uk,stack);
-    if (isNegative) { value->dataAsInt64 = -value->dataAsInt64; }
+
+    A5(t,uk,stack, value);
+    if (isNegative) { 
+        value->isAssignable = 0;
+        value->dataAsInt64 = -value->dataAsInt64; 
+    }
 
     oldUk = *uk;
     T = scan(lex,t,uk);
+    Node *newValue = malloc(sizeof(Node));
     
     while (T == TPlus || T == TMinus ) {
 
-        Node *newValue = A5(t,uk,0);
+        A5(t,uk,0, newValue);
+        value->isAssignable = 0;
+
         switch(T) {
    
-        case TPlus: { value->dataAsInt = value->dataAsInt + newValue->dataAsInt; };break;
-        case TMinus: { value->dataAsInt = value->dataAsInt - newValue->dataAsInt; };break;
+        case TPlus: { value->dataAsInt64 = value->dataAsInt64 + newValue->dataAsInt64; };break;
+        case TMinus: { value->dataAsInt64 = value->dataAsInt64 - newValue->dataAsInt64; };break;
 
         }
         
@@ -532,33 +550,36 @@ Node * A4(char *t,int *uk, NodeStack *stack){
         T = scan(lex,t,uk);
 
     }
-    
+    free(newValue);    
     *uk = oldUk;
 
-    return value;
 }
 
-Node * A5(char *t,int *uk, NodeStack *stack){
+void A5(char *t,int *uk,NodeStack *stack,  Node *value){
 
     int oldUk = *uk;
-    Node *value;
-    value = A6(t,uk, stack);
+
+    A6(t,uk,stack, value);
 
     oldUk = *uk;
     int T = scan(lex,t,uk);
+    Node *newValue = malloc(sizeof(Node));
     
     while (T == TMul || T == TDiv || T == TRest ) {
-        Node *newValue = A6(t,uk,0);
+
+
+        A6(t,uk,0,newValue);
+        value->isAssignable = 0;
         switch(T) {
    
-        case TMul: { value->dataAsInt = value->dataAsInt * newValue->dataAsInt; };break;
-        case TRest: { value->dataAsInt = value->dataAsInt % newValue->dataAsInt; };break;
+        case TMul: { value->dataAsInt64 = value->dataAsInt64 * newValue->dataAsInt64; };break;
+        case TRest: { value->dataAsInt64 = value->dataAsInt64 % newValue->dataAsInt64; };break;
         case TDiv: { 
-            if (newValue->dataAsInt == 0) {
+            if (newValue->dataAsInt64 == 0) {
                 printf ("Devision by zero (uk: %d)",  *uk);
                 exit(EXIT_FAILURE);
             }
-            value->dataAsInt = value->dataAsInt / newValue->dataAsInt; 
+            value->dataAsInt64 = value->dataAsInt64 / newValue->dataAsInt64; 
         };break;
 
         }
@@ -567,24 +588,23 @@ Node * A5(char *t,int *uk, NodeStack *stack){
         T = scan(lex,t,uk);
 
     }
-    
+    free(newValue);
     *uk = oldUk;
-
-    return value;
 
 }
 
-Node * A6(char *t,int *uk, NodeStack *stack) {
+void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
 
     int oldUk = *uk, T = scan(lex,t,uk);
     int idUk = *uk;
     char *id = (char *)calloc(strlen(lex), sizeof(char));
     strcpy(id, lex);
-    Node * value = (Node *)calloc(1, sizeof(Node));        
+
 
     if (T == TCrBrackOpen){
-        
-        value = Expression(t,uk);
+
+        Expression(t,uk,value);
+
         oldUk = *uk;
         T = scan(lex,t,uk);
 
@@ -615,7 +635,8 @@ Node * A6(char *t,int *uk, NodeStack *stack) {
         
         if (T == TSqBrackOpen) {
 
-            Node * index = Expression(t,uk);
+            Node *index = malloc(sizeof(Node));
+            Expression(t,uk, index);
             T = scan(lex,t,uk);
             
             if (T != TSqBrackClose) {
@@ -627,7 +648,12 @@ Node * A6(char *t,int *uk, NodeStack *stack) {
                 printf ("ERROR:  %s is not array. [uk: %d] \n", id, idUk);
                 exit(EXIT_FAILURE);
             }
-            
+
+            if (index->dataAsInt64 > declaredVar->elementsCount - 1) {
+                printf ("Index of array `%s` is out of bounds. uk: %d, lex: %s", declaredVar->id, *uk, lex);
+                exit(EXIT_FAILURE);
+            }
+
             switch(declaredVar->type) {
 
             case dTInt: { value->dataAsInt = declaredVar->dataAsIntArray[index->dataAsInt]; }; break;
@@ -637,6 +663,8 @@ Node * A6(char *t,int *uk, NodeStack *stack) {
             
             value->type = declaredVar->type;
             declaredVar->currentArrayIndex = index->dataAsInt;
+
+            value->isAssignable = 1;
 
             if (stack != 0) {
                 push_stack(stack,declaredVar);
@@ -651,8 +679,12 @@ Node * A6(char *t,int *uk, NodeStack *stack) {
             }
 
             *uk = oldUk;
+            printf ("%d\n",value);
+
             value->type = declaredVar->type;
             value->dataAsInt64 = declaredVar->dataAsInt64;
+
+            value->isAssignable = 1;
 
             if (stack != 0) {
                 push_stack(stack,declaredVar);
@@ -670,17 +702,15 @@ Node * A6(char *t,int *uk, NodeStack *stack) {
 
         value->dataAsInt = strtol(lex,0,base);
         value->type = dTInt;
-
+        value->isAssignable = 0;
 
     }
-
-    return value;
-
 }
 
 void For(char *t,int *uk){
 
     int oldUk = *uk, T = scan(lex,t,uk);
+    Node * value = malloc(sizeof(Node));        
 
     if (T != TFor) {
         printf ("Expected  `<for>`, got: %x, uk: %d, lex: %s", T, *uk, lex);
@@ -693,7 +723,7 @@ void For(char *t,int *uk){
         exit(EXIT_FAILURE);
     }
 
-    Expression(t,uk);
+    Expression(t,uk,value);
 
     T = scan(lex,t,uk);
     if (T != TComma) {
@@ -701,7 +731,7 @@ void For(char *t,int *uk){
         exit(EXIT_FAILURE);
     }
 
-    Expression(t,uk);
+    Expression(t,uk,value);
 
     T = scan(lex,t,uk);
     if (T != TComma) {
@@ -709,7 +739,7 @@ void For(char *t,int *uk){
         exit(EXIT_FAILURE);
     }
     
-    Expression(t,uk);
+    Expression(t,uk,value);
 
     T = scan(lex,t,uk);
     if (T != TCrBrackClose) {

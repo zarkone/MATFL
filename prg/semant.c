@@ -126,13 +126,14 @@ int typeCast(Node * current, Node * castee) {
     }
 }
 
-void init_stack(NodeStack* stack, int allocLength){
+void init_stack(NodeStack *stack, int allocLength){
 
     stack->items = (Node **)calloc(allocLength, sizeof(Node*));
     stack->length = 0;
 }
 
 void push_stack(NodeStack* stack, Node* item){
+
     stack->items[stack->length++] = item;
 }
 Node* pop_stack(NodeStack* stack){
