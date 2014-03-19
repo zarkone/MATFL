@@ -1,3 +1,4 @@
+CC = gcc
 inputfile = test.cpp
 
 run-tree: tags run tree 
@@ -5,18 +6,18 @@ run: main
 	./compile $(inputfile)
 
 main: buildlib
-	cc -I./ -g -Wall compile.c -L./ -lcompile -o compile
+	$(CC) -I./ -g -Wall compile.c -L./ -lcompile -o compile
 
 buildlib: semant
 	ar ruv libcompile.a scaner.o synt.o semant.o
 	ranlib libcompile.a
 
 semant: synt
-	cc  -I./ -g -c semant.c 
+	$(CC) -I./ -g -c semant.c 
 synt: scaner
-	cc  -I./ -g -c synt.c 
+	$(CC) -I./ -g -c synt.c 
 scaner:
-	cc  -I./ -g -c scaner.c 
+	$(CC) -I./ -g -c scaner.c 
 clean:
 	rm -f  *.o *.a compile
 tags:
