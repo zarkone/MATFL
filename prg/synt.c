@@ -188,15 +188,15 @@ void VarDescr(char *t, int *uk){
             Node * value = (Node *)calloc(1, sizeof(Node));        
             Expression(t,uk, value);
             
-            // if (INTERPRET_FLAG) {
-            //     if (typeCast(current, value) < 0) {
+            if (INTERPRET_FLAG) {
+                if (typeCast(current, value) < 0) {
 
-            //         printf ("Expected int and __int64 types to cast, got: %d, %d\n", current->type, value->type);
-            //         printf (" uk: %d, lex: %s",  *uk, lex);
-            //         printf ("%s %d\n",value->id, value->dataAsInt64);
-            //         exit(EXIT_FAILURE);
-            //     }
-            // }
+                    printf ("Expected int and __int64 types to cast, got: %d, %d\n", current->type, value->type);
+                    printf (" uk: %d, lex: %s",  *uk, lex);
+                    printf ("%s %d\n",value->id, value->dataAsInt64);
+                    exit(EXIT_FAILURE);
+                }
+            }
             free(value);
 
             T = scan(lex, t, uk);
@@ -448,14 +448,21 @@ void Expression(char *t,int *uk, Node *value){
 void A2(char *t,int *uk,NodeStack *stack,  Node *value){
 
     int oldUk = *uk;
+    int stackLengthBefore = stack ? stack->length : 0;
 
     A3(t,uk,stack, value);
+
+    int stackLengthAfter = stack ? stack->length : 0;
 
     oldUk = *uk;
     int T = scan(lex,t,uk);
     Node *newValue = malloc(sizeof(Node));
 
     while (T == TAnd || T == TOr) {
+
+        if (stackLengthAfter != stackLengthBefore) {
+            pop_stack(stack);
+        }
 
         A3(t,uk,0,newValue);
         value->isAssignable = 0;
@@ -479,10 +486,19 @@ void A3(char *t,int *uk,NodeStack *stack,  Node *value){
     
     if (T != TNot) { *uk = oldUk; }
     else { isNot = 1; }
-    
+
+    int stackLengthBefore = stack ? stack->length : 0;    
 
     A4(t,uk,stack,value);
+
+    int stackLengthAfter = stack ? stack->length : 0;
+
     if (isNot) { 
+
+        if (stackLengthAfter != stackLengthBefore) {
+            pop_stack(stack);
+        }
+
         value->isAssignable = 0;
         value->dataAsInt64 = !value->dataAsInt64; 
     }  
@@ -493,6 +509,10 @@ void A3(char *t,int *uk,NodeStack *stack,  Node *value){
     Node *newValue = malloc(sizeof(Node));
     
     while (T == TGrEq || T == TGr || T == TLess || T == TLessEq || T == TEq || T == TNotEq) {
+
+        if (stackLengthAfter != stackLengthBefore) {
+            pop_stack(stack);
+        }
 
         A4(t,uk,0,newValue);
 
@@ -523,9 +543,18 @@ void A4(char *t,int *uk,NodeStack *stack, Node *value){
     if (T != TPlus && T != TMinus) { *uk = oldUk; }
     else if (T == TMinus) { isNegative = 1; }
 
+    int stackLengthBefore = stack ? stack->length : 0;
 
     A5(t,uk,stack, value);
+
+    int stackLengthAfter = stack ? stack->length : 0;
+
     if (isNegative) { 
+
+        if (stackLengthAfter != stackLengthBefore) {
+            pop_stack(stack);
+        }
+
         value->isAssignable = 0;
         value->dataAsInt64 = -value->dataAsInt64; 
     }
@@ -535,6 +564,10 @@ void A4(char *t,int *uk,NodeStack *stack, Node *value){
     Node *newValue = malloc(sizeof(Node));
     
     while (T == TPlus || T == TMinus ) {
+
+        if (stackLengthAfter != stackLengthBefore) {
+            pop_stack(stack);
+        }
 
         A5(t,uk,0, newValue);
         value->isAssignable = 0;
@@ -559,7 +592,11 @@ void A5(char *t,int *uk,NodeStack *stack,  Node *value){
 
     int oldUk = *uk;
 
+    int stackLengthBefore = stack ? stack->length : 0;
+
     A6(t,uk,stack, value);
+
+    int stackLengthAfter = stack ? stack->length : 0;
 
     oldUk = *uk;
     int T = scan(lex,t,uk);
@@ -567,6 +604,9 @@ void A5(char *t,int *uk,NodeStack *stack,  Node *value){
     
     while (T == TMul || T == TDiv || T == TRest ) {
 
+        if (stackLengthAfter != stackLengthBefore) {
+            pop_stack(stack);
+        }
 
         A6(t,uk,0,newValue);
         value->isAssignable = 0;
@@ -649,7 +689,8 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
                 exit(EXIT_FAILURE);
             }
 
-            if (index->dataAsInt64 > declaredVar->elementsCount - 1) {
+            if (index->dataAsInt64 > declaredVar->elementsCount - 1 || index->dataAsInt64 < 0) {
+                printf ("%d %d\n", index->dataAsInt64, declaredVar->elementsCount-1);
                 printf ("Index of array `%s` is out of bounds. uk: %d, lex: %s", declaredVar->id, *uk, lex);
                 exit(EXIT_FAILURE);
             }
@@ -700,8 +741,8 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
 
         int base = (T == TConstDec) ? 10 : 16;
 
-        value->dataAsInt = strtol(lex,0,base);
-        value->type = dTInt;
+        value->dataAsInt64 = strtol(lex,0,base);
+        value->type = dTInt64;
         value->isAssignable = 0;
 
     }
