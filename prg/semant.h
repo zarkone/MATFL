@@ -31,20 +31,26 @@ typedef struct Node
 	char *data, *id;
     struct Node *child, *neighbour, *parent;
 	int elementsCount;
-    int currentArrayIndex;
 
 } Node;
 
+typedef struct NodeStackItem
+{
+    Node *node;
+    int index;
+
+}NodeStackItem;
+
 typedef struct NodeStack
 {
-    Node **items;
+    NodeStackItem **items;
     int length;
     
 } NodeStack;
 
 void init_stack(NodeStack* stack, int allocLength);
-void push_stack(NodeStack* stack, Node* item);
-Node* pop_stack(NodeStack* stack);
+void push_stack(NodeStack* stack, Node* item, int index);
+NodeStackItem* pop_stack(NodeStack* stack);
 
 Node* addToTree(const char* lex, DATA_TYPE type, Node *current);
 Node* createBlockAsChild(Node *current, Node **rollback);

@@ -261,6 +261,7 @@ void Block(char *t, int *uk){
 void Operator(char *t,int *uk){
 
     int oldUk = *uk, T = scan(lex,t,uk);
+    Node * value = malloc(sizeof(Node));        
 
     if (T == TFor) {
 
@@ -317,11 +318,7 @@ void Operator(char *t,int *uk){
         } else {
             
             *uk = oldUk;
-
-            Node * value = (Node *)calloc(1, sizeof(Node));        
             Expression(t,uk,value);
-            free(value);
-
             T = scan(lex,t,uk);
         }
         
@@ -330,10 +327,7 @@ void Operator(char *t,int *uk){
                T == TConstHex ) {
 
         *uk = oldUk;
-        Node * value = (Node *)calloc(1, sizeof(Node));        
         Expression(t,uk, value);
-        free(value);
-
         T = scan(lex,t,uk);
      
     }
@@ -342,6 +336,8 @@ void Operator(char *t,int *uk){
         printf ("Expected  `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
+
+    free(value);
     
 }
 
@@ -418,22 +414,24 @@ void Expression(char *t,int *uk, Node *value){
     } while(T == TAssign);
 
     if (stack->length > 0) {
-        Node *var;
+        NodeStackItem *var;
         
         while(var = pop_stack(stack)) {
 
-            if (var->elementsCount > 0) {
+            if (var->index > -1) {
 
-                switch(var->type) {
+                switch(var->node->type) {
 
-                case dTInt: { var->dataAsIntArray[var->currentArrayIndex] = value->dataAsInt;  }; break;
-                case dTInt64: { var->dataAsInt64Array[var->currentArrayIndex] = value->dataAsInt64;  }; break;
+                case dTInt: { var->node->dataAsIntArray[var->index] = value->dataAsInt;  }; break;
+                case dTInt64: { var->node->dataAsInt64Array[var->index] = value->dataAsInt64;  }; break;
 
                 }
             }
             else {
-                var->dataAsInt64 =  value->dataAsInt64;
+                var->node->dataAsInt64 =  value->dataAsInt64;
             }
+
+            free(var);
 
         }
     }
@@ -703,12 +701,12 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
             }
             
             value->type = declaredVar->type;
-            declaredVar->currentArrayIndex = index->dataAsInt;
+            // declaredVar->currentArrayIndex = index->dataAsInt;
 
             value->isAssignable = 1;
 
             if (stack != 0) {
-                push_stack(stack,declaredVar);
+                push_stack(stack,declaredVar,index->dataAsInt64 );
             }
 
             
@@ -728,7 +726,7 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
             value->isAssignable = 1;
 
             if (stack != 0) {
-                push_stack(stack,declaredVar);
+                push_stack(stack,declaredVar,-1);
             }
 
         }

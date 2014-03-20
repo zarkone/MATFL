@@ -128,16 +128,37 @@ int typeCast(Node * current, Node * castee) {
 
 void init_stack(NodeStack *stack, int allocLength){
 
-    stack->items = (Node **)calloc(allocLength, sizeof(Node*));
+    stack->items = calloc(allocLength, sizeof(NodeStackItem*));
     stack->length = 0;
 }
 
-void push_stack(NodeStack* stack, Node* item){
+void push_stack(NodeStack* stack, Node* newNode, int index){
 
-    stack->items[stack->length++] = item;
+    NodeStackItem *stackItem = malloc(sizeof(NodeStackItem));
+
+    stackItem->node = newNode;
+    if (index > -1) {
+        stackItem->index = index;
+    } else {
+        stackItem->index = -1;
+    }
+
+    stack->items[stack->length] = stackItem;
+    stack->length++;
 }
-Node* pop_stack(NodeStack* stack){
+NodeStackItem* pop_stack(NodeStack* stack){
+    
+    NodeStackItem *item;
+    if (stack->length == 0) {
+        item = 0;
+    } else {
+        item = malloc(sizeof(NodeStackItem));
+        item->node = stack->items[stack->length-1]->node;
+        item->index = stack->items[stack->length-1]->index;
+        stack->length--;
+    }
 
-    if (stack->length == 0) return 0;
-    return stack->items[--stack->length];
+    return item;
+    
+
 }
