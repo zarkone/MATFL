@@ -16,7 +16,7 @@ void printTree(Node *node, int depth, FILE *fp) {
     fprintf(fp, "%s", node->id);
 
     if (node->elementsCount > 0) {
-        fprintf(fp, "[%d]", node->elementsCount);
+        fprintf(fp, "[%ld]", node->elementsCount);
 
     } else if (node->type == dTIntMain || node->type == dTVoidFunc) {
         fprintf(fp, "()");
@@ -32,16 +32,17 @@ void printTree(Node *node, int depth, FILE *fp) {
             switch(node->type){
 
             case dTInt: {fprintf(fp, " %d", node->dataAsIntArray[i]);}; break;
-            case dTInt64: {fprintf(fp, " %d", node->dataAsInt64Array[i]);}; break;
+            case dTInt64: {fprintf(fp, " %ld", node->dataAsInt64Array[i]);}; break;
 
             }
         }
 
         fprintf(fp, "]", node->dataAsInt);
 
-    } else if (node->type == dTInt || node->type == dTInt64){
-
-        fprintf(fp, ": %d", node->dataAsInt64);    
+    } else if (node->type == dTInt) {
+        fprintf(fp, ": %d", node->dataAsInt);    
+    } else if (node->type == dTInt64) { 
+        fprintf(fp, ": %ld", node->dataAsInt64);    
     }
     
     fprintf(fp, "\n");

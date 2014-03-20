@@ -23,9 +23,9 @@ typedef struct Node
     DATA_TYPE type;
     union {
         int dataAsInt;
-        int64_t dataAsInt64;
+        long int dataAsInt64;
         int *dataAsIntArray;
-        int64_t *dataAsInt64Array;
+        long int *dataAsInt64Array;
     };
     int isAssignable;
 	char *data, *id;

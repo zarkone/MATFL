@@ -6,6 +6,7 @@
 #include <scaner.h>
 #include <synt.h>
 #include <semant.h>
+#include <limits.h>
 
 Node *current;
 int INTERPRET_FLAG = 1;
@@ -175,7 +176,7 @@ void VarDescr(char *t, int *uk){
                 switch(current->type) {
 
                 case dTInt: { current->dataAsIntArray = (int *)calloc(current->elementsCount, sizeof(int)); };break;
-                case dTInt64: { current->dataAsInt64Array = (int64_t *)calloc(current->elementsCount, sizeof(int64_t)); };break;
+                case dTInt64: { current->dataAsInt64Array = (long int *)calloc(current->elementsCount, sizeof(long int)); };break;
 
                 }
             }
@@ -185,10 +186,11 @@ void VarDescr(char *t, int *uk){
             
         } else if (T == TAssign) {
 
-            Node * value = (Node *)calloc(1, sizeof(Node));        
+            Node * value = malloc(sizeof(Node));        
             Expression(t,uk, value);
             
             if (INTERPRET_FLAG) {
+
                 if (typeCast(current, value) < 0) {
 
                     printf ("Expected int and __int64 types to cast, got: %d, %d\n", current->type, value->type);
@@ -196,6 +198,7 @@ void VarDescr(char *t, int *uk){
                     printf ("%s %d\n",value->id, value->dataAsInt64);
                     exit(EXIT_FAILURE);
                 }
+
             }
             free(value);
 
@@ -428,12 +431,15 @@ void Expression(char *t,int *uk, Node *value){
                 }
             }
             else {
-                var->node->dataAsInt64 =  value->dataAsInt64;
+                typeCast(var->node, value);
             }
 
-            free(var);
+            value->type = var->node->type;
+            value->dataAsInt64 = var->node->dataAsInt64;
 
+            free(var);
         }
+
     }
 
 
@@ -660,8 +666,8 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
             exit(EXIT_FAILURE);
         }
 
-        BOOL isVar = (declaredVar->type == dTInt || declaredVar->type == dTInt64);
-        BOOL isArray =  declaredVar->elementsCount > 0;
+        short isVar = (declaredVar->type == dTInt || declaredVar->type == dTInt64);
+        short isArray =  declaredVar->elementsCount > 0;
 
         if (!isVar) {
             printf ("ERROR:  %s is declared but it is not a variable, it's a function. [uk: %d] \n", id, idUk);
@@ -687,7 +693,7 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
                 exit(EXIT_FAILURE);
             }
 
-            if (index->dataAsInt64 > declaredVar->elementsCount - 1 || index->dataAsInt64 < 0) {
+            if (index->dataAsInt > declaredVar->elementsCount - 1 || index->dataAsInt64 < 0) {
                 printf ("%d %d\n", index->dataAsInt64, declaredVar->elementsCount-1);
                 printf ("Index of array `%s` is out of bounds. uk: %d, lex: %s", declaredVar->id, *uk, lex);
                 exit(EXIT_FAILURE);
@@ -701,14 +707,12 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
             }
             
             value->type = declaredVar->type;
-            // declaredVar->currentArrayIndex = index->dataAsInt;
-
             value->isAssignable = 1;
 
             if (stack != 0) {
-                push_stack(stack,declaredVar,index->dataAsInt64 );
+                push_stack(stack,declaredVar,index->dataAsInt );
             }
-
+            free(index);
             
         } else {
             
@@ -740,7 +744,11 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
         int base = (T == TConstDec) ? 10 : 16;
 
         value->dataAsInt64 = strtol(lex,0,base);
-        value->type = dTInt64;
+
+        value->type = (value->dataAsInt64 >= INT_MAX) 
+            ?  dTInt64 
+            :  dTInt; 
+        printf(":%ld\n", value->dataAsInt64);
         value->isAssignable = 0;
 
     }
