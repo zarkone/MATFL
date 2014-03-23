@@ -28,6 +28,7 @@ typedef struct Node
         long int *dataAsInt64Array;
     };
     int isAssignable;
+    int functionBlockUk;
 	char *data, *id;
     struct Node *child, *neighbour, *parent;
 	int elementsCount;

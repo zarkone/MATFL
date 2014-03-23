@@ -82,6 +82,7 @@ void FuncDescr(char *t, int *uk){
 
     if ( !findUp(current, lex, FALSE) ) {
         current = addToTree(lex, type, current);
+        
     } else {
         printf ("ERROR: Function %s is already declared. \n", lex);
         exit(EXIT_FAILURE);
@@ -98,12 +99,15 @@ void FuncDescr(char *t, int *uk){
 
     oldUk = *uk;
     T = scan(lex, t, uk);
+
     *uk = oldUk;
 
     if (!(T == TEgBrackOpen)) {
         printf ("Expected `{ `, got: %x (uk: %d, lex: %s)", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
+
+    current->functionBlockUk = *uk;
 
     if (type != dTIntMain) { INTERPRET_FLAG = 0; }
     Block(t, uk);
@@ -299,24 +303,42 @@ void Operator(char *t,int *uk){
             if (T != TCrBrackClose) {
                 printf ("Expected `<id>()`, got: %x, uk: %d, lex: %s", T, *uk, lex);
                 exit(EXIT_FAILURE);
-            } else {
+            } 
                 
-                Node *declaredFunction = findUp(current, id, FALSE);
+            Node *declaredFunction = findUp(current, id, FALSE);
                 
-                if ( !declaredFunction ) {
-                    printf ("ERROR: Function %s is not declared. [uk: %d] \n", id, idUk);
-                    exit(EXIT_FAILURE);
-                }
-
-                BOOL isFunction = (declaredFunction->type == dTVoidFunc || declaredFunction->type == dTIntMain);
-                if (!isFunction) {
-                    printf ("ERROR:  %s is declared but it is not a function. [uk: %d] \n", id, idUk);
-                    exit(EXIT_FAILURE);
-                }
-                    
-
-                T = scan(lex,t,uk);
+            if ( !declaredFunction ) {
+                printf ("ERROR: Function %s is not declared. [uk: %d] \n", id, idUk);
+                exit(EXIT_FAILURE);
             }
+
+            BOOL isFunction = (declaredFunction->type == dTVoidFunc);
+            if (!isFunction) {
+                printf ("ERROR:  %s is declared but it is not a function. [uk: %d] \n", id, idUk);
+                exit(EXIT_FAILURE);
+            }
+
+            Node *oldNeighbour, *oldCurrent;
+
+            if (declaredFunction->neighbour) {
+                oldNeighbour = declaredFunction->neighbour;
+            }
+            oldCurrent = current;
+
+            current = declaredFunction->neighbour = createBlockNode(current);
+            current->neighbour = oldNeighbour;
+            
+            int beforeCallUk = *uk;
+
+            *uk = declaredFunction->functionBlockUk;
+
+            printf("befor: %d \n", *uk);
+            Block(t,uk);
+
+            *uk = beforeCallUk;
+            current = oldCurrent;
+
+            T = scan(lex,t,uk);
 
         } else {
             
