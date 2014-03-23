@@ -8,7 +8,9 @@ void f() {
 
 
 }
-
+void f2() {
+    int a, b = 8, z = 44 + 33 + (2 +5);
+}
 int main() {
     __int64 b1;
     __int64 a = e = b1 =112147483657;

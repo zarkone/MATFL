@@ -373,12 +373,14 @@ void PossibleArrInit(char *t,int *uk) {
             exit(EXIT_FAILURE);
         }
 
-        int base = (T == TConstDec) ? 10 : 16;
+        if (INTERPRET_FLAG) {
+            int base = (T == TConstDec) ? 10 : 16;
 
-        switch(current->type)
-        {
-        case dTInt: { current->dataAsIntArray[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
-        case dTInt64: { current->dataAsInt64Array[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
+            switch(current->type)
+            {
+            case dTInt: { current->dataAsIntArray[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
+            case dTInt64: { current->dataAsInt64Array[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
+            }
         }
 
         T = scan(lex,t,uk);
@@ -398,10 +400,12 @@ void PossibleArrInit(char *t,int *uk) {
 void Expression(char *t,int *uk, Node *value){
 
     int oldUk = *uk, T;
+    NodeStack *stack;
 
-    NodeStack *stack = malloc(sizeof(NodeStack));
-
-    init_stack(stack, 128); 
+    if (INTERPRET_FLAG) {
+        stack = malloc(sizeof(NodeStack));
+        init_stack(stack, 128); 
+    }
 
     do {
         
@@ -409,14 +413,14 @@ void Expression(char *t,int *uk, Node *value){
         oldUk = *uk;
         T = scan(lex,t,uk);
         
-        if (T == TAssign && !value->isAssignable) {
+        if ( INTERPRET_FLAG && T == TAssign && !value->isAssignable) {
             printf ("lvalue required.  uk: %d, lex: %s",  *uk, lex);
             exit(EXIT_FAILURE);
         }
 
     } while(T == TAssign);
 
-    if (stack->length > 0) {
+    if (INTERPRET_FLAG && stack->length > 0) {
         NodeStackItem *var;
         
         while(var = pop_stack(stack)) {
@@ -442,8 +446,9 @@ void Expression(char *t,int *uk, Node *value){
 
     }
 
-
-    free(stack->items);
+    if (INTERPRET_FLAG) {
+        free(stack->items);
+    }
 
     *uk = oldUk;
     
@@ -460,7 +465,11 @@ void A2(char *t,int *uk,NodeStack *stack,  Node *value){
 
     oldUk = *uk;
     int T = scan(lex,t,uk);
-    Node *newValue = malloc(sizeof(Node));
+    Node *newValue;
+
+    if (INTERPRET_FLAG) {
+        newValue = malloc(sizeof(Node));
+    }
 
     while (T == TAnd || T == TOr) {
 
@@ -469,17 +478,24 @@ void A2(char *t,int *uk,NodeStack *stack,  Node *value){
         }
 
         A3(t,uk,0,newValue);
-        value->isAssignable = 0;
-        if (T == TAnd) {
-            value->dataAsInt64 = value->dataAsInt64 && newValue->dataAsInt64;
-        } else {
-            value->dataAsInt64 = value->dataAsInt64 || newValue->dataAsInt64;
+
+        if (INTERPRET_FLAG) {
+            value->isAssignable = 0;
+            if (T == TAnd) {
+                value->dataAsInt64 = value->dataAsInt64 && newValue->dataAsInt64;
+            } else {
+                value->dataAsInt64 = value->dataAsInt64 || newValue->dataAsInt64;
+            }
         }
 
         oldUk = *uk;
         T = scan(lex,t,uk);
     }
-    free(newValue);
+
+    if (INTERPRET_FLAG) {
+        free(newValue);
+    }
+
     *uk = oldUk;
 }
 void A3(char *t,int *uk,NodeStack *stack,  Node *value){
@@ -497,7 +513,7 @@ void A3(char *t,int *uk,NodeStack *stack,  Node *value){
 
     int stackLengthAfter = stack ? stack->length : 0;
 
-    if (isNot) { 
+    if (INTERPRET_FLAG && isNot) { 
 
         if (stackLengthAfter != stackLengthBefore) {
             pop_stack(stack);
@@ -510,8 +526,12 @@ void A3(char *t,int *uk,NodeStack *stack,  Node *value){
     oldUk = *uk;
     T = scan(lex,t,uk);
 
-    Node *newValue = malloc(sizeof(Node));
-    
+    Node *newValue;
+
+    if (INTERPRET_FLAG) {
+        newValue= malloc(sizeof(Node));
+    }
+
     while (T == TGrEq || T == TGr || T == TLess || T == TLessEq || T == TEq || T == TNotEq) {
 
         if (stackLengthAfter != stackLengthBefore) {
@@ -520,22 +540,28 @@ void A3(char *t,int *uk,NodeStack *stack,  Node *value){
 
         A4(t,uk,0,newValue);
 
-        switch(T) {
+        if (INTERPRET_FLAG) {
+            switch(T) {
    
-        case TGrEq: { value->dataAsInt64 = value->dataAsInt64 >= newValue->dataAsInt64; };break;
-        case TGr: { value->dataAsInt64 = value->dataAsInt64 > newValue->dataAsInt64; };break;
-        case TLess: { value->dataAsInt64 = value->dataAsInt64 < newValue->dataAsInt64; };break;
-        case TLessEq: { value->dataAsInt64 = value->dataAsInt64 <= newValue->dataAsInt64; };break;
-        case TEq: { value->dataAsInt64 = value->dataAsInt64 == newValue->dataAsInt64; };break;
-        case TNotEq: { value->dataAsInt64 = value->dataAsInt64 != newValue->dataAsInt64; };break;
+            case TGrEq: { value->dataAsInt64 = value->dataAsInt64 >= newValue->dataAsInt64; };break;
+            case TGr: { value->dataAsInt64 = value->dataAsInt64 > newValue->dataAsInt64; };break;
+            case TLess: { value->dataAsInt64 = value->dataAsInt64 < newValue->dataAsInt64; };break;
+            case TLessEq: { value->dataAsInt64 = value->dataAsInt64 <= newValue->dataAsInt64; };break;
+            case TEq: { value->dataAsInt64 = value->dataAsInt64 == newValue->dataAsInt64; };break;
+            case TNotEq: { value->dataAsInt64 = value->dataAsInt64 != newValue->dataAsInt64; };break;
 
+            }
         }
 
         oldUk = *uk;
         T = scan(lex,t,uk);
 
     }
-    free(newValue);    
+
+    if (INTERPRET_FLAG) {
+        free(newValue);    
+    }
+
     *uk = oldUk;
 }
 
@@ -553,7 +579,7 @@ void A4(char *t,int *uk,NodeStack *stack, Node *value){
 
     int stackLengthAfter = stack ? stack->length : 0;
 
-    if (isNegative) { 
+    if (INTERPRET_FLAG && isNegative) { 
 
         if (stackLengthAfter != stackLengthBefore) {
             pop_stack(stack);
@@ -565,8 +591,12 @@ void A4(char *t,int *uk,NodeStack *stack, Node *value){
 
     oldUk = *uk;
     T = scan(lex,t,uk);
-    Node *newValue = malloc(sizeof(Node));
-    
+    Node *newValue;
+
+    if (INTERPRET_FLAG) {
+        newValue = malloc(sizeof(Node));
+    }
+
     while (T == TPlus || T == TMinus ) {
 
         if (stackLengthAfter != stackLengthBefore) {
@@ -574,20 +604,27 @@ void A4(char *t,int *uk,NodeStack *stack, Node *value){
         }
 
         A5(t,uk,0, newValue);
-        value->isAssignable = 0;
 
-        switch(T) {
+        if (INTERPRET_FLAG) {        
+            value->isAssignable = 0;
+
+            switch(T) {
    
-        case TPlus: { value->dataAsInt64 = value->dataAsInt64 + newValue->dataAsInt64; };break;
-        case TMinus: { value->dataAsInt64 = value->dataAsInt64 - newValue->dataAsInt64; };break;
+            case TPlus: { value->dataAsInt64 = value->dataAsInt64 + newValue->dataAsInt64; };break;
+            case TMinus: { value->dataAsInt64 = value->dataAsInt64 - newValue->dataAsInt64; };break;
 
+            }
         }
-        
+
         oldUk = *uk;
         T = scan(lex,t,uk);
 
     }
-    free(newValue);    
+
+    if (INTERPRET_FLAG) {        
+        free(newValue);    
+    }
+
     *uk = oldUk;
 
 }
@@ -604,8 +641,12 @@ void A5(char *t,int *uk,NodeStack *stack,  Node *value){
 
     oldUk = *uk;
     int T = scan(lex,t,uk);
-    Node *newValue = malloc(sizeof(Node));
-    
+    Node *newValue;
+
+    if (INTERPRET_FLAG) {        
+        newValue = malloc(sizeof(Node));
+    }
+
     while (T == TMul || T == TDiv || T == TRest ) {
 
         if (stackLengthAfter != stackLengthBefore) {
@@ -613,26 +654,32 @@ void A5(char *t,int *uk,NodeStack *stack,  Node *value){
         }
 
         A6(t,uk,0,newValue);
-        value->isAssignable = 0;
-        switch(T) {
+
+        if (INTERPRET_FLAG) {        
+
+            value->isAssignable = 0;
+            switch(T) {
    
-        case TMul: { value->dataAsInt64 = value->dataAsInt64 * newValue->dataAsInt64; };break;
-        case TRest: { value->dataAsInt64 = value->dataAsInt64 % newValue->dataAsInt64; };break;
-        case TDiv: { 
-            if (newValue->dataAsInt64 == 0) {
-                printf ("Devision by zero (uk: %d)",  *uk);
-                exit(EXIT_FAILURE);
+            case TMul: { value->dataAsInt64 = value->dataAsInt64 * newValue->dataAsInt64; };break;
+            case TRest: { value->dataAsInt64 = value->dataAsInt64 % newValue->dataAsInt64; };break;
+            case TDiv: { 
+                if (newValue->dataAsInt64 == 0) {
+                    printf ("Devision by zero (uk: %d)",  *uk);
+                    exit(EXIT_FAILURE);
+                }
+                value->dataAsInt64 = value->dataAsInt64 / newValue->dataAsInt64; 
+            };break;
+
             }
-            value->dataAsInt64 = value->dataAsInt64 / newValue->dataAsInt64; 
-        };break;
-
         }
-
         oldUk = *uk;
         T = scan(lex,t,uk);
 
     }
-    free(newValue);
+
+    if (INTERPRET_FLAG) {        
+        free(newValue);
+    }
     *uk = oldUk;
 
 }
@@ -679,7 +726,12 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
         
         if (T == TSqBrackOpen) {
 
-            Node *index = malloc(sizeof(Node));
+            Node *index;
+
+            if (INTERPRET_FLAG) {
+                index = malloc(sizeof(Node));
+            }
+
             Expression(t,uk, index);
             T = scan(lex,t,uk);
             
@@ -693,26 +745,28 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
                 exit(EXIT_FAILURE);
             }
 
-            if (index->dataAsInt > declaredVar->elementsCount - 1 || index->dataAsInt64 < 0) {
-                printf ("%d %d\n", index->dataAsInt64, declaredVar->elementsCount-1);
-                printf ("Index of array `%s` is out of bounds. uk: %d, lex: %s", declaredVar->id, *uk, lex);
-                exit(EXIT_FAILURE);
-            }
+            if (INTERPRET_FLAG) {
+                if (index->dataAsInt > declaredVar->elementsCount - 1 || index->dataAsInt64 < 0) {
+                    printf ("%d %d\n", index->dataAsInt64, declaredVar->elementsCount-1);
+                    printf ("Index of array `%s` is out of bounds. uk: %d, lex: %s", declaredVar->id, *uk, lex);
+                    exit(EXIT_FAILURE);
+                }
 
-            switch(declaredVar->type) {
+                switch(declaredVar->type) {
 
-            case dTInt: { value->dataAsInt = declaredVar->dataAsIntArray[index->dataAsInt]; }; break;
-            case dTInt64: { value->dataAsInt64 = declaredVar->dataAsInt64Array[index->dataAsInt]; }; break;
+                case dTInt: { value->dataAsInt = declaredVar->dataAsIntArray[index->dataAsInt]; }; break;
+                case dTInt64: { value->dataAsInt64 = declaredVar->dataAsInt64Array[index->dataAsInt]; }; break;
 
-            }
+                }
             
-            value->type = declaredVar->type;
-            value->isAssignable = 1;
+                value->type = declaredVar->type;
+                value->isAssignable = 1;
 
-            if (stack != 0) {
-                push_stack(stack,declaredVar,index->dataAsInt );
+                if (stack != 0) {
+                    push_stack(stack,declaredVar,index->dataAsInt );
+                }
+                free(index);
             }
-            free(index);
             
         } else {
             
@@ -722,15 +776,16 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
             }
 
             *uk = oldUk;
-            printf ("%d\n",value);
 
-            value->type = declaredVar->type;
-            value->dataAsInt64 = declaredVar->dataAsInt64;
+            if (INTERPRET_FLAG) {
+                value->type = declaredVar->type;
+                value->dataAsInt64 = declaredVar->dataAsInt64;
 
-            value->isAssignable = 1;
+                value->isAssignable = 1;
 
-            if (stack != 0) {
-                push_stack(stack,declaredVar,-1);
+                if (stack != 0) {
+                    push_stack(stack,declaredVar,-1);
+                }
             }
 
         }
@@ -741,16 +796,17 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
 
     } else {
 
-        int base = (T == TConstDec) ? 10 : 16;
+        if (INTERPRET_FLAG) {
+            int base = (T == TConstDec) ? 10 : 16;
 
-        value->dataAsInt64 = strtol(lex,0,base);
+            value->dataAsInt64 = strtol(lex,0,base);
 
-        value->type = (value->dataAsInt64 >= INT_MAX) 
-            ?  dTInt64 
-            :  dTInt; 
-        printf(":%ld\n", value->dataAsInt64);
-        value->isAssignable = 0;
+            value->type = (value->dataAsInt64 >= INT_MAX) 
+                ?  dTInt64 
+                :  dTInt; 
 
+            value->isAssignable = 0;
+        }
     }
 }
 
