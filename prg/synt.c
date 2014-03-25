@@ -317,27 +317,25 @@ void Operator(char *t,int *uk){
                 printf ("ERROR:  %s is declared but it is not a function. [uk: %d] \n", id, idUk);
                 exit(EXIT_FAILURE);
             }
-
-            Node *oldNeighbour, *oldCurrent;
-
-            if (declaredFunction->neighbour) {
-                oldNeighbour = declaredFunction->neighbour;
-            }
-            oldCurrent = current;
-
-            current = declaredFunction->neighbour = createBlockNode(current);
-            current->neighbour = oldNeighbour;
             
-            int beforeCallUk = *uk;
+            if (INTERPRET_FLAG) { 
+                Node *oldNeighbour, *oldCurrent;
 
-            *uk = declaredFunction->functionBlockUk;
+                oldNeighbour = declaredFunction->neighbour;
+                oldCurrent = current;
 
-            printf("befor: %d \n", *uk);
-            Block(t,uk);
+                current = declaredFunction->neighbour = createBlockNode(current);
+                current->neighbour = oldNeighbour;
+            
+                int beforeCallUk = *uk;
 
-            *uk = beforeCallUk;
-            current = oldCurrent;
+                *uk = declaredFunction->functionBlockUk;
 
+                Block(t,uk);
+
+                *uk = beforeCallUk;
+                current = oldCurrent;
+            }
             T = scan(lex,t,uk);
 
         } else {
@@ -422,12 +420,12 @@ void PossibleArrInit(char *t,int *uk) {
 void Expression(char *t,int *uk, Node *value){
 
     int oldUk = *uk, T;
-    NodeStack *stack;
+    NodeStack *stack = 0;
 
     if (INTERPRET_FLAG) {
         stack = malloc(sizeof(NodeStack));
         init_stack(stack, 128); 
-    }
+    } 
 
     do {
         
@@ -479,6 +477,7 @@ void Expression(char *t,int *uk, Node *value){
 void A2(char *t,int *uk,NodeStack *stack,  Node *value){
 
     int oldUk = *uk;
+
     int stackLengthBefore = stack ? stack->length : 0;
 
     A3(t,uk,stack, value);
@@ -822,7 +821,6 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
             int base = (T == TConstDec) ? 10 : 16;
 
             value->dataAsInt64 = strtol(lex,0,base);
-
             value->type = (value->dataAsInt64 >= INT_MAX) 
                 ?  dTInt64 
                 :  dTInt; 
@@ -835,7 +833,10 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
 void For(char *t,int *uk){
 
     int oldUk = *uk, T = scan(lex,t,uk);
+    int condUk, incUk, opUk, endOpUk, condition;
+
     Node * value = malloc(sizeof(Node));        
+
 
     if (T != TFor) {
         printf ("Expected  `<for>`, got: %x, uk: %d, lex: %s", T, *uk, lex);
@@ -847,7 +848,7 @@ void For(char *t,int *uk){
         printf ("Expected  `(`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
-
+    
     Expression(t,uk,value);
 
     T = scan(lex,t,uk);
@@ -856,15 +857,31 @@ void For(char *t,int *uk){
         exit(EXIT_FAILURE);
     }
 
+    condUk = *uk;
+
     Expression(t,uk,value);
 
+    if (INTERPRET_FLAG) {
+        condition = value->dataAsInt;
+    }
+
     T = scan(lex,t,uk);
+
     if (T != TComma) {
         printf ("Expected  `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
         exit(EXIT_FAILURE);
     }
     
-    Expression(t,uk,value);
+    incUk = *uk;
+
+    if (INTERPRET_FLAG) {
+
+        INTERPRET_FLAG = 0;
+        Expression(t,uk,value);
+        INTERPRET_FLAG = 1;
+    } else {
+        Expression(t,uk,value);
+    }
 
     T = scan(lex,t,uk);
     if (T != TCrBrackClose) {
@@ -872,6 +889,107 @@ void For(char *t,int *uk){
         exit(EXIT_FAILURE);
     }
 
-    Operator(t,uk);
+    opUk = *uk;
+    if (INTERPRET_FLAG && condition) {
+        Operator(t,uk);
+    } else {
+        INTERPRET_FLAG = 0;
+        Operator(t,uk);
+        INTERPRET_FLAG = 1;
+    }
 
+    endOpUk = *uk;
+
+    if (INTERPRET_FLAG) {
+
+        do {
+            
+            *uk = incUk;
+            Expression(t,uk,value);
+
+            *uk = condUk;
+            Expression(t,uk,value);
+            
+            if (value->dataAsInt) {
+                *uk = opUk;
+                Operator(t,uk);
+                
+            } else {
+                *uk = endOpUk;
+            }
+        } while (value->dataAsInt);
+        
+    }
+//     } else {
+
+//         int condUk, incUk, opUk, endOpUk, condition, intLocal =0;
+//         condUk = *uk;
+
+//     cond: 
+
+//         Expression(t,uk,value);
+        
+//         condition = value->dataAsInt;
+
+//         if (intLocal) {
+//             if (!condition) {
+//                 *uk = endOpUk;
+//                 goto endop;
+//             } 
+//             *uk = opUk;
+//             goto op;
+//         }
+
+//         T = scan(lex,t,uk);
+
+//         if (T != TComma) {
+//             printf ("Expected  `;`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+//             exit(EXIT_FAILURE);
+//         }
+
+
+//         INTERPRET_FLAG = 0;
+
+//         incUk = *uk;
+
+//     inc:     
+//         printf ("inc:\n");    
+//         Expression(t,uk,value);
+
+//         if (intLocal) {
+//             *uk = condUk;
+//             goto cond;
+//         }
+
+//         T = scan(lex,t,uk);
+//         if (T != TCrBrackClose) {
+//             printf ("Expected  `)`, got: %x, uk: %d, lex: %s", T, *uk, lex);
+//             exit(EXIT_FAILURE);
+//         }
+    
+//         opUk = *uk;
+
+//     op: 
+//         INTERPRET_FLAG = condition ? 1 : 0;
+
+//         Operator(t,uk);
+
+//         if (intLocal && condition) {
+//             *uk = incUk;
+//             goto inc;
+//         }
+
+//         endOpUk = *uk;
+
+
+//         if (condition && !intLocal) {
+//             intLocal = 1;
+//             *uk = incUk;
+//             goto inc;
+//         }
+
+
+//     }
+// endop:    
+    free(value);
 }
