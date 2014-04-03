@@ -6,7 +6,7 @@ int e = (5 * 8 + 3 - 1) / 7;
 void f() { 
     int fvar = a  = 5;
     int f2var = 2;
-
+    for(0; f2var < 3; f2var = f2var + 1) fvar = fvar + 5;
 }
 int forvar = 0;
 
@@ -30,11 +30,13 @@ int main() {
     b[0] = b[1] = b[2] + 1;
     // a  = e = g0 + 9;
     f2();
+    f();
     // f2();
     int forvar = 0;
     for(i=0;i < 0; i = i + 1)
     {
         // f2();
+        // int hahah;
         forvar  = forvar + 2;
     }
 

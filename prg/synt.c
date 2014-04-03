@@ -398,7 +398,7 @@ void PossibleArrInit(char *t,int *uk) {
 
             switch(current->type)
             {
-            case dTInt: { current->dataAsIntArray[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
+            case dTInt: { current->dataAsIntArray[current->elementsCount - eIndex] = (int)strtol(lex,0,base); }; break;
             case dTInt64: { current->dataAsInt64Array[current->elementsCount - eIndex] = strtol(lex,0,base); }; break;
             }
         }
@@ -679,10 +679,17 @@ void A5(char *t,int *uk,NodeStack *stack,  Node *value){
         if (INTERPRET_FLAG) {        
 
             value->isAssignable = 0;
+            printf ("v: %d %d\n", value->dataAsInt, newValue->dataAsInt);
             switch(T) {
    
             case TMul: { value->dataAsInt64 = value->dataAsInt64 * newValue->dataAsInt64; };break;
-            case TRest: { value->dataAsInt64 = value->dataAsInt64 % newValue->dataAsInt64; };break;
+            case TRest: { 
+                if (newValue->dataAsInt64 == 0) {
+                    printf ("% by zero (uk: %d)",  *uk);
+                    exit(EXIT_FAILURE);
+                }
+                value->dataAsInt64 = value->dataAsInt64 % newValue->dataAsInt64; 
+            };break;
             case TDiv: { 
                 if (newValue->dataAsInt64 == 0) {
                     printf ("Devision by zero (uk: %d)",  *uk);
@@ -692,6 +699,7 @@ void A5(char *t,int *uk,NodeStack *stack,  Node *value){
             };break;
 
             }
+            printf ("endv.\n");
         }
         oldUk = *uk;
         T = scan(lex,t,uk);
@@ -833,7 +841,7 @@ void A6(char *t,int *uk,NodeStack *stack,  Node *value) {
 void For(char *t,int *uk){
 
     int oldUk = *uk, T = scan(lex,t,uk);
-    int condUk, incUk, opUk, endOpUk, condition;
+    int condUk, incUk, opUk, endOpUk, condition=0;
 
     Node * value = malloc(sizeof(Node));        
 
@@ -890,13 +898,13 @@ void For(char *t,int *uk){
     }
 
     opUk = *uk;
-    if (INTERPRET_FLAG && condition) {
+    if (condition || !INTERPRET_FLAG) {
         Operator(t,uk);
-    } else {
+    } else if (INTERPRET_FLAG && !condition) {
         INTERPRET_FLAG = 0;
         Operator(t,uk);
         INTERPRET_FLAG = 1;
-    }
+    } 
 
     endOpUk = *uk;
 

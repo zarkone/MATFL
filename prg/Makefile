@@ -29,7 +29,7 @@ tree:
 
 
 test1: 	inputfile = test.cpp
-test1:	run;
+test1:	run-tree;
 
 
 test2: 	inputfile = test2.cpp
